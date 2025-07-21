@@ -41,12 +41,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
   // If no data is available, show a message
   if (!hasConsumptionData && !hasSolarData) {
     return (
-      <div className="energy-chart">
-        <div className="chart-header">
-          <h2>Energy Analysis</h2>
-          <p>Please select a location and upload your energy usage data to see the analysis.</p>
-        </div>
-      </div>
+      <p>Please select a location and upload your<br/>energy usage data to see the analysis.</p>
     );
   }
   

@@ -92,7 +92,7 @@ function App() {
     try {
       // Check if we have solar irradiance data
       if (!solarIrradiance) {
-        throw new Error('Solar data is required for analysis. Please select a location on the map first.')
+        throw new Error('Solar data is required for analysis. Please enter a location first.')
       }
       
       const processedData = processUploadedData(data, solarIrradiance)

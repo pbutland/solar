@@ -158,7 +158,7 @@ export async function getApiSolarIrradiance(
 ): Promise<number[]> {
   // Require coordinates to be provided
   if (latitude === undefined || longitude === undefined) {
-    throw new Error('Location coordinates are required to fetch solar data. Please select a location on the map.');
+    throw new Error('Location coordinates are required to fetch solar data. Please input a location.');
   }
 
   console.log(`Attempting to fetch solar data for coordinates: ${latitude}, ${longitude}`);
