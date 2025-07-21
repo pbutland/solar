@@ -40,7 +40,7 @@ export interface SolarSystemConstants {
 export const solarSystemConstants: SolarSystemConstants = {
   // Panel efficiency constant (300% - appears to be calibrated for GHI data)
   // Note: This value seems unusually high but matches the original implementation
-  panelEfficiency: 3,
+  panelEfficiency: 3.5, // 0.2 - need to work out why the ghi from the API is so low
   
   // System losses constant (15% - accounts for inverter losses, wiring, etc.)
   systemLosses: 0.15,
