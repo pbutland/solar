@@ -1,7 +1,6 @@
 /* EnergyChart Component Styles */
 .energy-chart-container {
   width: 100%;
-  max-width: 800px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -64,6 +63,19 @@
 .chart-wrapper {
   width: 100%;
   margin: 20px 0;
+  height: 450px; /* Adds extra space for chart + labels */
+}
+
+@media (max-width: 768px) {
+  .chart-wrapper {
+    height: 430px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-wrapper {
+    height: 370px;
+  }
 }
 
 /* Custom tooltip styles */
@@ -93,11 +105,26 @@
 }
 
 .chart-legend-extended {
-  margin-top: 20px;
+  margin-top: 30px;
   padding: 15px;
   background: #f8f9fa;
   border-radius: 6px;
   color: #333; /* Ensure text is dark */
+  position: relative; /* Add position relative */
+  z-index: 1; /* Ensure it's above chart elements if there's any overlap */
+}
+
+@media (max-width: 768px) {
+  .chart-legend-extended {
+    margin-top: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-legend-extended {
+    margin-top: 20px;
+    padding: 10px;
+  }
 }
 
 .legend-item {
@@ -164,7 +191,7 @@
   }
   
   .chart-wrapper {
-    margin: 15px 0;
+    margin: 15px 0 25px 0; /* Add more bottom margin for better separation */
   }
   
   .legend-item {
@@ -191,10 +218,6 @@
   
   .summary-value {
     font-size: 1em;
-  }
-  
-  .chart-wrapper {
-    height: 300px;
   }
 }
 

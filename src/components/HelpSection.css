@@ -1,5 +1,4 @@
 .help-section {
-  width: 100%;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
@@ -8,12 +7,25 @@
   text-align: left;
 }
 
+@media (max-width: 768px) {
+  .help-section {
+    padding: 1rem;
+  }
+}
+
 .help-section h2 {
   color: #ff6b35;
   text-align: center; /* Keep the title centered */
   margin-bottom: 1.5rem;
   font-size: 1.8rem;
   font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .help-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
 }
 
 .help-accordion {
@@ -52,6 +64,12 @@
   font-weight: 600;
 }
 
+@media (max-width: 768px) {
+  .help-header h3 {
+    font-size: 1.1rem;
+  }
+}
+
 .expand-icon {
   font-size: 1.5rem;
   font-weight: 600;
@@ -64,6 +82,13 @@
   line-height: 1.5;
   color: #444;
   text-align: left;
+}
+
+@media (max-width: 768px) {
+  .help-content {
+    padding: 0 1rem 1rem;
+    font-size: 0.95rem;
+  }
 }
 
 .help-content h4 {

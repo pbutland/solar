@@ -202,7 +202,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
               top: 20,
               right: 30,
               left: 20,
-              bottom: 5,
+              bottom: 20,
             }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -265,7 +265,8 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-
+      <div style={{ clear: 'both' }}></div>
+      
       <div className="chart-legend-extended">
         {hasSolarData && (
           <div className="legend-item">
