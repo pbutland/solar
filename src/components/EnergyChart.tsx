@@ -12,13 +12,12 @@ import {
 } from 'recharts';
 import type { ProcessedData } from '../types/index.js';
 import { calculateDailyGeneration, calculateNetEnergy, calculateSolarRadiation } from '../utils/solarCalculations';
-import type { SolarIrradianceData } from '../services/solarIrradianceService.js';
 import './EnergyChart.css';
 
 interface EnergyChartProps {
   installationSizeKW: number;
   uploadedData: ProcessedData | null;
-  solarIrradiance: SolarIrradianceData | null;
+  solarIrradiance: number[] | null;
 }
 
 interface ChartDataPoint {
@@ -37,7 +36,7 @@ interface ChartDataPoint {
 const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedData, solarIrradiance }) => {
   // Check what data is available
   const hasConsumptionData = uploadedData?.dailyConsumption && uploadedData.dailyConsumption.length > 0;
-  const hasSolarData = solarIrradiance && solarIrradiance.normalizedValues.length === 365;
+  const hasSolarData = solarIrradiance && solarIrradiance.length === 365;
   
   // If no data is available, show a message
   if (!hasConsumptionData && !hasSolarData) {
@@ -53,16 +52,12 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
   
   // Calculate daily generation only if we have solar irradiance data
   const dailyGeneration = hasSolarData 
-    ? calculateDailyGeneration(
-        installationSizeKW, 
-        solarIrradiance.normalizedValues, 
-        solarIrradiance.maxIrradianceWh
-      )
+    ? calculateDailyGeneration(installationSizeKW, solarIrradiance)
     : [];
   
   // Calculate solar radiation data for display
   const dailySolarRadiation = hasSolarData
-    ? calculateSolarRadiation(solarIrradiance.normalizedValues, solarIrradiance.maxIrradianceWh)
+    ? calculateSolarRadiation(solarIrradiance)
     : [];
   
   // Calculate net energy only if we have both consumption and generation data

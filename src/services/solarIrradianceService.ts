@@ -21,20 +21,14 @@ interface NASAPowerResponse {
 const NASA_POWER_BASE_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point';
 const SOLAR_PARAMETER = 'ALLSKY_SFC_SW_DWN'; // All Sky Surface Shortwave Downward Irradiance
 
-// Type for solar irradiance data with location-specific maximum
-interface SolarIrradianceData {
-  normalizedValues: number[];
-  maxIrradianceWh: number;
-}
-
 /**
  * Fetch solar irradiance data from NASA POWER API
  * 
  * @param latitude - Location latitude
  * @param longitude - Location longitude
- * @returns Promise resolving to normalized solar irradiance data and location-specific maximum
+ * @returns Promise resolving to daily solar irradiance data in Wh/m²/day
  */
-async function fetchNASAPowerData(latitude: number, longitude: number): Promise<SolarIrradianceData> {
+async function fetchNASAPowerData(latitude: number, longitude: number): Promise<number[]> {
   // Get date range for the past year (API has 5-day delay)
   const endDate = new Date();
   endDate.setDate(endDate.getDate() - 5); // Account for API delay
@@ -127,22 +121,26 @@ async function fetchNASAPowerData(latitude: number, longitude: number): Promise<
     }
   }
   
-  // Calculate the maximum irradiance value for normalization
-  const maxIrradiance = Math.max(...orderedIrradiance);
-  
-  if (maxIrradiance === 0) {
-    throw new Error('All irradiance values are zero - invalid data from NASA POWER API');
+  // Validate all values are positive
+  const hasInvalidValues = orderedIrradiance.some(value => value <= 0 || isNaN(value));
+  if (hasInvalidValues) {
+    console.warn('Found invalid irradiance values, replacing with interpolated values');
+    // Replace invalid values with average of valid values
+    const validValues = orderedIrradiance.filter(value => value > 0 && !isNaN(value));
+    const average = validValues.length > 0 
+      ? validValues.reduce((sum, val) => sum + val, 0) / validValues.length 
+      : 5000; // 5 kWh/m²/day fallback
+    
+    for (let i = 0; i < orderedIrradiance.length; i++) {
+      if (orderedIrradiance[i] <= 0 || isNaN(orderedIrradiance[i])) {
+        orderedIrradiance[i] = average;
+      }
+    }
   }
   
-  // Normalize to create relative multipliers (0-1 range)
-  const normalizedValues = orderedIrradiance.map(value => value / maxIrradiance);
+  console.log(`Successfully processed NASA POWER data: ${orderedIrradiance.length} days, values range: ${Math.min(...orderedIrradiance).toFixed(2)} - ${Math.max(...orderedIrradiance).toFixed(2)} Wh/m²/day`);
   
-  console.log(`Successfully processed NASA POWER data: ${normalizedValues.length} days, max irradiance: ${maxIrradiance.toFixed(2)} Wh/m²/day`);
-  
-  return {
-    normalizedValues,
-    maxIrradianceWh: maxIrradiance
-  };
+  return orderedIrradiance;
 }
 
 /**
@@ -151,13 +149,13 @@ async function fetchNASAPowerData(latitude: number, longitude: number): Promise<
  * 
  * @param latitude - Location latitude (required for API call)
  * @param longitude - Location longitude (required for API call)
- * @returns Promise resolving to solar irradiance data with normalized values and location-specific maximum
+ * @returns Promise resolving to daily solar irradiance data in Wh/m²/day
  * @throws Error if coordinates are missing or API call fails
  */
 export async function getApiSolarIrradiance(
   latitude?: number, 
   longitude?: number
-): Promise<SolarIrradianceData> {
+): Promise<number[]> {
   // Require coordinates to be provided
   if (latitude === undefined || longitude === undefined) {
     throw new Error('Location coordinates are required to fetch solar data. Please select a location on the map.');
@@ -169,24 +167,29 @@ export async function getApiSolarIrradiance(
     const apiData = await fetchNASAPowerData(latitude, longitude);
     
     // Validate the API data
-    if (!apiData || !Array.isArray(apiData.normalizedValues) || apiData.normalizedValues.length !== 365) {
-      throw new Error(`Invalid API response: expected 365 daily values, received ${apiData?.normalizedValues?.length || 'invalid data'}`);
+    if (!apiData || !Array.isArray(apiData) || apiData.length !== 365) {
+      throw new Error(`Invalid API response: expected 365 daily values, received ${apiData?.length || 'invalid data'}`);
     }
     
     // Check for values that are out of valid range and fix them
-    const invalidValues = apiData.normalizedValues.filter(val => 
-      typeof val !== 'number' || val < 0 || val > 1 || isNaN(val)
+    const invalidValues = apiData.filter(val => 
+      typeof val !== 'number' || val < 0 || isNaN(val)
     );
     
     if (invalidValues.length > 0) {
-      console.warn(`Found ${invalidValues.length} invalid solar data values out of valid range (0-1):`, invalidValues);
-      console.warn('Setting invalid values to 0 and continuing...');
+      console.warn(`Found ${invalidValues.length} invalid solar data values:`, invalidValues);
+      console.warn('Setting invalid values to interpolated averages and continuing...');
       
-      // Fix invalid values by setting them to 0
-      for (let i = 0; i < apiData.normalizedValues.length; i++) {
-        const val = apiData.normalizedValues[i];
-        if (typeof val !== 'number' || val < 0 || val > 1 || isNaN(val)) {
-          apiData.normalizedValues[i] = 0;
+      // Fix invalid values by setting them to average of valid values
+      const validValues = apiData.filter(val => typeof val === 'number' && val > 0 && !isNaN(val));
+      const average = validValues.length > 0 
+        ? validValues.reduce((sum, val) => sum + val, 0) / validValues.length 
+        : 5000; // 5 kWh/m²/day fallback
+      
+      for (let i = 0; i < apiData.length; i++) {
+        const val = apiData[i];
+        if (typeof val !== 'number' || val < 0 || isNaN(val)) {
+          apiData[i] = average;
         }
       }
     }
@@ -216,35 +219,21 @@ export async function getApiSolarIrradiance(
 /**
  * Validate solar irradiance data
  * 
- * @param data - Solar irradiance data object to validate
+ * @param data - Array of irradiance values to validate
  * @returns true if data is valid, false otherwise
  */
-export function validateSolarIrradianceData(data: unknown): data is SolarIrradianceData {
-  if (!data || typeof data !== 'object') {
+export function validateSolarIrradianceData(data: unknown): data is number[] {
+  if (!Array.isArray(data)) {
     return false;
   }
   
-  const solarData = data as SolarIrradianceData;
-  
-  if (!Array.isArray(solarData.normalizedValues)) {
+  if (data.length !== 365) {
     return false;
   }
   
-  if (solarData.normalizedValues.length !== 365) {
-    return false;
-  }
-  
-  if (typeof solarData.maxIrradianceWh !== 'number' || solarData.maxIrradianceWh <= 0) {
-    return false;
-  }
-  
-  return solarData.normalizedValues.every(val => 
+  return data.every(val => 
     typeof val === 'number' && 
     val >= 0 && 
-    val <= 1 && 
     !isNaN(val)
   );
 }
-
-// Export the type for use in other modules
-export type { SolarIrradianceData };

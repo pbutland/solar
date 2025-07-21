@@ -5,13 +5,13 @@ import InstallationControls from './components/InstallationControls'
 import FileUpload from './components/FileUpload'
 import LocationInput from './components/LocationInput'
 import type { EnergyUsageEntry, ProcessedData } from './types/index.js'
-import { getApiSolarIrradiance, type SolarIrradianceData } from './services/solarIrradianceService.js'
+import { getApiSolarIrradiance } from './services/solarIrradianceService.js'
 import { processUploadedData } from './utils/dataProcessor.ts'
 
 function App() {
   const [installationSize, setInstallationSize] = useState(6)
   const [uploadedData, setUploadedData] = useState<ProcessedData | null>(null)
-  const [solarIrradiance, setSolarIrradiance] = useState<SolarIrradianceData | null>(null)
+  const [solarIrradiance, setSolarIrradiance] = useState<number[] | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false)
   const [solarError, setSolarError] = useState<string | null>(null)
@@ -94,7 +94,7 @@ function App() {
         throw new Error('Solar data is required for analysis. Please select a location on the map first.')
       }
       
-      const processedData = processUploadedData(data, solarIrradiance.normalizedValues)
+      const processedData = processUploadedData(data, solarIrradiance)
       setUploadedData(processedData)
       setUploadError(null)
       setUploadSuccess(true)
