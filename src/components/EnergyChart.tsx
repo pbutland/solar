@@ -34,15 +34,10 @@ interface ChartDataPoint {
  * Shows net energy calculation and uses color coding for surplus/deficit days
  */
 const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedData, solarIrradiance }) => {
-  // Check what data is available
   const hasConsumptionData = uploadedData?.dailyConsumption && uploadedData.dailyConsumption.length > 0;
   const hasSolarData = solarIrradiance && solarIrradiance.length === 365;
-  
-  // If no data is available, show a message
   if (!hasConsumptionData && !hasSolarData) {
-    return (
-      <p>Please select a location and upload your<br/>energy usage data to see the analysis.</p>
-    );
+    return null;
   }
   
   // Calculate daily generation only if we have solar irradiance data

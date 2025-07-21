@@ -117,6 +117,9 @@ function App() {
     setUploadSuccess(false)
   }
 
+  const hasConsumptionData = uploadedData?.dailyConsumption && uploadedData.dailyConsumption.length > 0;
+  const hasSolarData = solarIrradiance && solarIrradiance.length === 365;
+
   return (
     <div className="app">
       <header>
@@ -150,19 +153,25 @@ function App() {
           ⚠️ {solarError}
         </div>
       )}
-      <main>
-        <InstallationControls 
-          installationSize={installationSize}
-          onInstallationSizeChange={setInstallationSize}
-        />
-        <div className="chart-section">
-          <EnergyChart 
-            installationSizeKW={installationSize}
-            uploadedData={uploadedData}
-            solarIrradiance={solarIrradiance}
-          />
+      {(!hasConsumptionData && !hasSolarData) ? (
+        <div className="no-data-message">
+          <p>Please select a location and upload your<br/>energy usage data to see the analysis.</p>
         </div>
-      </main>
+      ) : (
+        <main>
+          <InstallationControls 
+            installationSize={installationSize}
+            onInstallationSizeChange={setInstallationSize}
+          />
+          <div className="chart-section">
+            <EnergyChart 
+              installationSizeKW={installationSize}
+              uploadedData={uploadedData}
+              solarIrradiance={solarIrradiance}
+            />
+          </div>
+        </main>
+      )}
       <HelpSection />
     </div>
   )

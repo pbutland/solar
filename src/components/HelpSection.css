@@ -5,7 +5,7 @@
   padding: 1.5rem;
   margin-top: 2rem;
   text-align: left;
-  max-width: 850px;
+  max-width: 1000px;
 }
 
 @media (max-width: 768px) {
@@ -125,7 +125,8 @@
   padding: 0.5rem;
   border-radius: 4px;
   font-family: monospace;
-  overflow-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: anywhere;
   font-size: 0.9em;
   color: #1976d2;
 }
