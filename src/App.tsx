@@ -4,6 +4,7 @@ import EnergyChart from './components/EnergyChart'
 import InstallationControls from './components/InstallationControls'
 import FileUpload from './components/FileUpload'
 import LocationInput from './components/LocationInput'
+import HelpSection from './components/HelpSection'
 import type { EnergyUsageEntry, ProcessedData } from './types/index.js'
 import { getApiSolarIrradiance } from './services/solarIrradianceService.js'
 import { processUploadedData } from './utils/dataProcessor.ts'
@@ -162,6 +163,7 @@ function App() {
           />
         </div>
       </main>
+      <HelpSection />
     </div>
   )
 }
