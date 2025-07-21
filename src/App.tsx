@@ -3,20 +3,38 @@ import './App.css'
 import EnergyChart from './components/EnergyChart'
 import InstallationControls from './components/InstallationControls'
 import FileUpload from './components/FileUpload'
-import type { EnergyUsageEntry } from './utils/csvProcessor.ts'
-import type { ProcessedData } from './utils/dataProcessor.ts'
-import { mockData } from './data/mockData.ts'
+import LocationInput from './components/LocationInput'
+import type { EnergyUsageEntry, ProcessedData } from './types/index.js'
+import { getApiSolarIrradiance } from './services/solarIrradianceService.js'
 import { processUploadedData } from './utils/dataProcessor.ts'
 
 function App() {
   const [installationSize, setInstallationSize] = useState(6)
   const [uploadedData, setUploadedData] = useState<ProcessedData | null>(null)
+  const [solarIrradiance, setSolarIrradiance] = useState<number[] | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false)
 
-  const handleDataLoaded = (data: EnergyUsageEntry[]) => {
+  const handleLocationChange = async (latitude: number | null, longitude: number | null) => {
+    if (latitude !== null && longitude !== null) {
+      try {
+        console.log('Loading solar irradiance for location:', { latitude, longitude })
+        const irradiance = await getApiSolarIrradiance(latitude, longitude)
+        setSolarIrradiance(irradiance)
+      } catch (error) {
+        console.error('Failed to load solar irradiance data:', error)
+        setSolarIrradiance(null)
+      }
+    } else {
+      setSolarIrradiance(null)
+    }
+  }
+
+  const handleDataLoaded = async (data: EnergyUsageEntry[]) => {
     try {
-      const processedData = processUploadedData(data)
+      // Get solar irradiance data for processing
+      const irradiance = solarIrradiance || await getApiSolarIrradiance()
+      const processedData = processUploadedData(data, irradiance)
       setUploadedData(processedData)
       setUploadError(null)
       setUploadSuccess(true)
@@ -42,12 +60,15 @@ function App() {
     <div className="app">
       <header>
         <h1>☀️ Solar Power Optimizer</h1>
-        <p>Discover your home's solar potential in Melbourne, Australia</p>
+        <p>Discover your home's solar potential</p>
       </header>
-      <FileUpload 
-        onDataLoaded={handleDataLoaded}
-        onError={handleUploadError}
-      />
+      <div className="input-section">
+        <LocationInput onLocationChange={handleLocationChange} />
+        <FileUpload 
+          onDataLoaded={handleDataLoaded}
+          onError={handleUploadError}
+        />
+      </div>
       {uploadSuccess && (
         <div className="upload-success">
           ✅ Energy data uploaded successfully! Analysis updated with your data.
@@ -64,19 +85,11 @@ function App() {
           onInstallationSizeChange={setInstallationSize}
         />
         <div className="chart-section">
-          {uploadedData ? (
-            <EnergyChart 
-              installationSizeKW={installationSize}
-              uploadedData={uploadedData}
-              showUsage={true}
-            />
-          ) : (
-            <EnergyChart 
-              installationSizeKW={installationSize}
-              uploadedData={mockData}
-              showUsage={false}
-            />
-          )}
+          <EnergyChart 
+            installationSizeKW={installationSize}
+            uploadedData={uploadedData}
+            solarIrradiance={solarIrradiance}
+          />
         </div>
       </main>
     </div>

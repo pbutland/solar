@@ -10,14 +10,14 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import type { ProcessedData } from '../utils/dataProcessor.ts';
+import type { ProcessedData } from '../types/index.js';
 import { calculateDailyGeneration, calculateNetEnergy, calculateSolarRadiation } from '../utils/solarCalculations';
 import './EnergyChart.css';
 
 interface EnergyChartProps {
   installationSizeKW: number;
-  uploadedData: ProcessedData;
-  showUsage?: boolean;
+  uploadedData: ProcessedData | null;
+  solarIrradiance: number[] | null;
 }
 
 interface ChartDataPoint {
@@ -33,24 +33,36 @@ interface ChartDataPoint {
  * Displays daily consumption and solar generation data with dual y-axis
  * Shows net energy calculation and uses color coding for surplus/deficit days
  */
-const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedData }) => {
-  // Use uploaded data (no fallback to mock data)
-  const dataToUse = uploadedData;
-  // Usage is enabled if dailyConsumption exists and is a non-empty array
-  const usageEnabled = Array.isArray(dataToUse.dailyConsumption) && dataToUse.dailyConsumption.length > 0;
+const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedData, solarIrradiance }) => {
+  // Check what data is available
+  const hasConsumptionData = uploadedData?.dailyConsumption && uploadedData.dailyConsumption.length > 0;
+  const hasSolarData = solarIrradiance && solarIrradiance.length === 365;
   
-  // Calculate daily generation based on current installation size
-  const dailyGeneration = calculateDailyGeneration(
-    installationSizeKW,
-    dataToUse.solarIrradiance
-  );
-
-  // Calculate solar radiation data for logging
-  const dailySolarRadiation = calculateSolarRadiation(dataToUse.solarIrradiance);
-
-  // Calculate net energy only if usage is enabled
-  const netEnergyData = usageEnabled && dataToUse.dailyConsumption
-    ? calculateNetEnergy(dataToUse.dailyConsumption, dailyGeneration)
+  // If no data is available, show a message
+  if (!hasConsumptionData && !hasSolarData) {
+    return (
+      <div className="energy-chart">
+        <div className="chart-header">
+          <h2>Energy Analysis</h2>
+          <p>Please select a location and upload your energy usage data to see the analysis.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Calculate daily generation only if we have solar irradiance data
+  const dailyGeneration = hasSolarData 
+    ? calculateDailyGeneration(installationSizeKW, solarIrradiance)
+    : [];
+  
+  // Calculate solar radiation data for display
+  const dailySolarRadiation = hasSolarData
+    ? calculateSolarRadiation(solarIrradiance)
+    : [];
+  
+  // Calculate net energy only if we have both consumption and generation data
+  const netEnergyData = hasConsumptionData && hasSolarData && uploadedData.dailyConsumption
+    ? calculateNetEnergy(uploadedData.dailyConsumption, dailyGeneration)
     : [];
 
   // Month names for x-axis labels
@@ -76,33 +88,35 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
     let monthlyNetEnergy = 0;
     let monthlySolarRadiation = 0;
     for (let day = startDay; day < endDay; day++) {
-      monthlyGeneration += dailyGeneration[day] || 0;
-      monthlySolarRadiation += dailySolarRadiation[day] || 0;
-      if (usageEnabled && dataToUse.dailyConsumption) {
-        monthlyConsumption += dataToUse.dailyConsumption[day] || 0;
+      if (hasSolarData) {
+        monthlyGeneration += dailyGeneration[day] || 0;
+        monthlySolarRadiation += dailySolarRadiation[day] || 0;
+      }
+      if (hasConsumptionData && uploadedData.dailyConsumption) {
+        monthlyConsumption += uploadedData.dailyConsumption[day] || 0;
         monthlyNetEnergy += netEnergyData[day] || 0;
       }
     }
     chartData.push({
       day: month + 1,
       month: shortMonthNames[month],
-      consumption: usageEnabled ? Math.round(monthlyConsumption * 100) / 100 : 0,
-      generation: Math.round(monthlyGeneration * 100) / 100,
-      netEnergy: usageEnabled ? Math.round(monthlyNetEnergy * 100) / 100 : 0
+      consumption: hasConsumptionData ? Math.round(monthlyConsumption * 100) / 100 : 0,
+      generation: hasSolarData ? Math.round(monthlyGeneration * 100) / 100 : 0,
+      netEnergy: hasConsumptionData && hasSolarData ? Math.round(monthlyNetEnergy * 100) / 100 : 0
     });
     dayIndex += daysInMonth;
   }
   
   // Calculate summary statistics for display
-  const totalGeneration = dailyGeneration.reduce((sum, val) => sum + val, 0);
+  const totalGeneration = hasSolarData ? dailyGeneration.reduce((sum: number, val: number) => sum + val, 0) : 0;
   let totalConsumption = 0;
   let totalNetEnergy = 0;
   let surplusDays = 0;
   let deficitDays = 0;
-  if (usageEnabled && dataToUse.dailyConsumption) {
-    totalConsumption = dataToUse.dailyConsumption.reduce((sum, val) => sum + val, 0);
+  if (hasConsumptionData && uploadedData.dailyConsumption) {
+    totalConsumption = uploadedData.dailyConsumption.reduce((sum: number, val: number) => sum + val, 0);
     totalNetEnergy = totalGeneration - totalConsumption;
-    surplusDays = netEnergyData.filter(net => net > 0).length;
+    surplusDays = netEnergyData.filter((net: number) => net > 0).length;
     deficitDays = 365 - surplusDays;
   }
 
@@ -144,14 +158,18 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
     <div className="energy-chart-container">
       <div className="chart-header">
         <h2>
-          {usageEnabled ? 'Monthly Energy Analysis (Your Data)' : 'Monthly Solar Generation (No Usage Data Uploaded)'}
+          {hasConsumptionData ? 'Monthly Energy Analysis (Your Data)' : 
+           hasSolarData ? 'Monthly Solar Generation (Select location for solar data)' : 
+           'Energy Analysis'}
         </h2>
         <div className="chart-summary">
-          <div className="summary-item">
-            <span className="summary-label">Annual Generation:</span>
-            <span className="summary-value">{Math.round(totalGeneration)} kWh</span>
-          </div>
-          {usageEnabled && (
+          {hasSolarData && (
+            <div className="summary-item">
+              <span className="summary-label">Annual Generation:</span>
+              <span className="summary-value">{Math.round(totalGeneration)} kWh</span>
+            </div>
+          )}
+          {hasConsumptionData && (
             <>
               <div className="summary-item">
                 <span className="summary-label">Annual Consumption:</span>
@@ -222,7 +240,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
               fillOpacity={0.7}
             />
             {/* Monthly consumption bars (only if usage data is available) */}
-            {usageEnabled && (
+            {hasConsumptionData && (
               <Bar
                 yAxisId="left"
                 dataKey="consumption"
@@ -232,7 +250,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
               />
             )}
             {/* Net energy line (only if usage data is available) */}
-            {usageEnabled && (
+            {hasConsumptionData && hasSolarData && (
               <Line
                 yAxisId="right"
                 type="monotone"
@@ -249,20 +267,24 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
       </div>
 
       <div className="chart-legend-extended">
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: '#82ca9d' }}></div>
-          <span>Monthly Generation (Updates with slider)</span>
-        </div>
-        {usageEnabled && (
+        {hasSolarData && (
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#82ca9d' }}></div>
+            <span>Monthly Generation (Updates with slider)</span>
+          </div>
+        )}
+        {hasConsumptionData && (
           <>
             <div className="legend-item">
               <div className="legend-color" style={{ backgroundColor: '#8884d8' }}></div>
               <span>Monthly Consumption (Uploaded Data)</span>
             </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#ff7300' }}></div>
-              <span>Monthly Net Energy (Generation - Consumption)</span>
-            </div>
+            {hasSolarData && (
+              <div className="legend-item">
+                <div className="legend-color" style={{ backgroundColor: '#ff7300' }}></div>
+                <span>Monthly Net Energy (Generation - Consumption)</span>
+              </div>
+            )}
             <div className="legend-note">
               <p><strong>Surplus months:</strong> When generation exceeds consumption (positive net energy)</p>
               <p><strong>Deficit months:</strong> When consumption exceeds generation (negative net energy)</p>

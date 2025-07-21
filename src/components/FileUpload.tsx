@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { processCsvData, type EnergyUsageEntry } from '../utils/csvProcessor.ts';
+import { processCsvData } from '../utils/csvProcessor.ts';
+import type { EnergyUsageEntry } from '../types/index.js';
 import './FileUpload.css';
 
 interface FileUploadProps {

@@ -1,14 +1,11 @@
+import type { EnergyUsageEntry } from '../types/index.js';
+
 interface CsvRow {
   'Usage Type': string;
   'Amount Used': string;
   'From (date/time)': string;
   'To (date/time)': string;
   [key: string]: string;
-}
-
-export interface EnergyUsageEntry {
-  date: string;
-  total: number;
 }
 
 export const processCsvData = (data: CsvRow[]): EnergyUsageEntry[] => {

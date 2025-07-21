@@ -1,9 +1,9 @@
 .file-upload-section {
-  margin: 2rem 0;
   padding: 1.5rem;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+  flex: 1;
 }
 
 .upload-header {

@@ -1,8 +1,8 @@
-import { mockData, solarSystemConstants } from '../data/mockData';
+import { solarSystemConstants } from '../config/solarConstants.js';
 import ghiData from '../data/ghi.json';
 
 /**
- * Solar calculation utilities for the POC
+ * Solar calculation utilities for the solar energy application
  * These functions handle the core solar energy calculations
  */
 
@@ -12,7 +12,7 @@ import ghiData from '../data/ghi.json';
  * @returns Array of solar radiation values in kWh/m²/day
  */
 export function calculateSolarRadiation(solarIrradiance: number[]): number[] {
-  // The irradiance data has been normalized (0-1) in mockData.ts
+  // The irradiance data has been normalized (0-1) by the solar irradiance service
   // We need to convert back using the original GHI data
   // NASA GHI data is in Wh/m²/day, need to convert to kWh/m²/day
   
@@ -163,7 +163,7 @@ export function validateInstallationSize(installationSizeKW: number): {
   if (installationSizeKW > 50) {
     return {
       isValid: false,
-      errorMessage: 'Installation size cannot exceed 50kW for this POC'
+      errorMessage: 'Installation size cannot exceed 50kW for this application'
     };
   }
 
@@ -252,38 +252,54 @@ export function aggregateToMonthly(dailyData: number[]): number[] {
 
 /**
  * Get daily solar radiation data for the current location
+ * @param solarIrradiance - Array of 365 daily irradiance multipliers (0-1)
  * @returns Array of 365 daily solar radiation values in kWh/m²/day
  */
-export function getDailySolarRadiation(): number[] {
-  return calculateSolarRadiation(mockData.solarIrradiance);
+export function getDailySolarRadiation(solarIrradiance: number[]): number[] {
+  return calculateSolarRadiation(solarIrradiance);
 }
 
 /**
  * Main calculation function that combines all calculations for a given installation size
  * This is the primary function that components will use
  * @param installationSizeKW - Size of solar installation in kilowatts
+ * @param dailyConsumption - Array of daily consumption values in kWh
+ * @param solarIrradiance - Array of 365 daily irradiance multipliers (0-1)
  * @returns Complete calculation results including solar radiation
  */
-export function calculateSolarSystem(installationSizeKW: number) {
+export function calculateSolarSystem(
+  installationSizeKW: number,
+  dailyConsumption: number[],
+  solarIrradiance: number[]
+) {
   // Validate installation size
   const validation = validateInstallationSize(installationSizeKW);
   if (!validation.isValid) {
     throw new Error(validation.errorMessage);
   }
 
+  // Validate input data
+  if (!Array.isArray(dailyConsumption) || dailyConsumption.length !== 365) {
+    throw new Error('Daily consumption must be an array of 365 values');
+  }
+
+  if (!Array.isArray(solarIrradiance) || solarIrradiance.length !== 365) {
+    throw new Error('Solar irradiance must be an array of 365 values');
+  }
+
   // Perform all calculations
   const dailyGeneration = calculateDailyGeneration(
     installationSizeKW,
-    mockData.solarIrradiance,
+    solarIrradiance,
     solarSystemConstants.panelEfficiency,
     solarSystemConstants.systemLosses
   );
 
-  const solarRadiation = calculateSolarRadiation(mockData.solarIrradiance);
+  const solarRadiation = calculateSolarRadiation(solarIrradiance);
   
-  const netEnergy = calculateNetEnergy(mockData.dailyConsumption, dailyGeneration);
+  const netEnergy = calculateNetEnergy(dailyConsumption, dailyGeneration);
   const spaceRequirements = calculateSpaceRequirements(installationSizeKW);
-  const annualSummary = calculateAnnualSummary(mockData.dailyConsumption, dailyGeneration);
+  const annualSummary = calculateAnnualSummary(dailyConsumption, dailyGeneration);
 
   return {
     installationSize: installationSizeKW,
