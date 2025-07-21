@@ -1,5 +1,4 @@
 import { solarSystemConstants } from '../config/solarConstants.js';
-import ghiData from '../data/ghi.json';
 
 /**
  * Solar calculation utilities for the solar energy application
@@ -9,20 +8,17 @@ import ghiData from '../data/ghi.json';
 /**
  * Calculate daily solar radiation from irradiance data
  * @param solarIrradiance - Array of 365 daily irradiance multipliers (0-1)
+ * @param maxIrradianceWh - Maximum irradiance value in Wh/m²/day for this location
  * @returns Array of solar radiation values in kWh/m²/day
  */
-export function calculateSolarRadiation(solarIrradiance: number[]): number[] {
+export function calculateSolarRadiation(solarIrradiance: number[], maxIrradianceWh: number): number[] {
   // The irradiance data has been normalized (0-1) by the solar irradiance service
-  // We need to convert back using the original GHI data
+  // We need to convert back using the location-specific max GHI data
   // NASA GHI data is in Wh/m²/day, need to convert to kWh/m²/day
-  
-  // Get the original max GHI value from the raw data to denormalize
-  const rawGhiValues = Object.values(ghiData.properties.parameter.ALLSKY_SFC_SW_DWN);
-  const maxGhiWh = Math.max(...rawGhiValues); // Max value in Wh/m²/day
   
   return solarIrradiance.map(normalizedIrradiance => {
     // Convert back to original Wh/m²/day, then to kWh/m²/day
-    const ghiWh = normalizedIrradiance * maxGhiWh;
+    const ghiWh = normalizedIrradiance * maxIrradianceWh;
     const ghiKWh = ghiWh / solarSystemConstants.wattsToKilowatts; // Convert Wh to kWh
     return Math.round(ghiKWh * 100) / 100; // Round to 2 decimal places
   });
@@ -32,6 +28,7 @@ export function calculateSolarRadiation(solarIrradiance: number[]): number[] {
  * Calculate daily solar generation based on installation size and solar irradiance
  * @param installationSizeKW - Size of solar installation in kilowatts (1-50kW)
  * @param solarIrradiance - Array of 365 daily irradiance multipliers (0-1)
+ * @param maxIrradianceWh - Maximum irradiance value in Wh/m²/day for this location
  * @param panelEfficiency - Panel efficiency factor (default: 0.2 for 20%)
  * @param systemLosses - System losses factor (default: 0.15 for 15%)
  * @returns Array of daily generation values in kWh
@@ -39,6 +36,7 @@ export function calculateSolarRadiation(solarIrradiance: number[]): number[] {
 export function calculateDailyGeneration(
   installationSizeKW: number,
   solarIrradiance: number[],
+  maxIrradianceWh: number,
   panelEfficiency: number = solarSystemConstants.panelEfficiency,
   systemLosses: number = solarSystemConstants.systemLosses
 ): number[] {
@@ -55,10 +53,8 @@ export function calculateDailyGeneration(
     // The irradiance value is already normalized (0-1) from actual GHI data
     // GHI data already accounts for daylight hours, sun angle, and seasonal variations
     
-    // Convert back to actual GHI (kWh/m²/day)
-    const rawGhiValues = Object.values(ghiData.properties.parameter.ALLSKY_SFC_SW_DWN);
-    const maxGhiWh = Math.max(...rawGhiValues);
-    const dailyGhiKWh = (irradiance * maxGhiWh) / solarSystemConstants.wattsToKilowatts; // Convert Wh to kWh per m²/day
+    // Convert back to actual GHI (kWh/m²/day) using location-specific maximum
+    const dailyGhiKWh = (irradiance * maxIrradianceWh) / solarSystemConstants.wattsToKilowatts; // Convert Wh to kWh per m²/day
     
     // Calculate panel area from installation size
     const panelAreaM2 = (installationSizeKW * solarSystemConstants.wattsToKilowatts) / solarSystemConstants.panelPowerDensityWPerM2; // Convert kW to W, then to m²
@@ -253,10 +249,11 @@ export function aggregateToMonthly(dailyData: number[]): number[] {
 /**
  * Get daily solar radiation data for the current location
  * @param solarIrradiance - Array of 365 daily irradiance multipliers (0-1)
+ * @param maxIrradianceWh - Maximum irradiance value in Wh/m²/day for this location
  * @returns Array of 365 daily solar radiation values in kWh/m²/day
  */
-export function getDailySolarRadiation(solarIrradiance: number[]): number[] {
-  return calculateSolarRadiation(solarIrradiance);
+export function getDailySolarRadiation(solarIrradiance: number[], maxIrradianceWh: number): number[] {
+  return calculateSolarRadiation(solarIrradiance, maxIrradianceWh);
 }
 
 /**
@@ -265,12 +262,14 @@ export function getDailySolarRadiation(solarIrradiance: number[]): number[] {
  * @param installationSizeKW - Size of solar installation in kilowatts
  * @param dailyConsumption - Array of daily consumption values in kWh
  * @param solarIrradiance - Array of 365 daily irradiance multipliers (0-1)
+ * @param maxIrradianceWh - Maximum irradiance value in Wh/m²/day for this location
  * @returns Complete calculation results including solar radiation
  */
 export function calculateSolarSystem(
   installationSizeKW: number,
   dailyConsumption: number[],
-  solarIrradiance: number[]
+  solarIrradiance: number[],
+  maxIrradianceWh: number
 ) {
   // Validate installation size
   const validation = validateInstallationSize(installationSizeKW);
@@ -287,15 +286,20 @@ export function calculateSolarSystem(
     throw new Error('Solar irradiance must be an array of 365 values');
   }
 
+  if (typeof maxIrradianceWh !== 'number' || maxIrradianceWh <= 0) {
+    throw new Error('Maximum irradiance must be a positive number');
+  }
+
   // Perform all calculations
   const dailyGeneration = calculateDailyGeneration(
     installationSizeKW,
     solarIrradiance,
+    maxIrradianceWh,
     solarSystemConstants.panelEfficiency,
     solarSystemConstants.systemLosses
   );
 
-  const solarRadiation = calculateSolarRadiation(solarIrradiance);
+  const solarRadiation = calculateSolarRadiation(solarIrradiance, maxIrradianceWh);
   
   const netEnergy = calculateNetEnergy(dailyConsumption, dailyGeneration);
   const spaceRequirements = calculateSpaceRequirements(installationSizeKW);

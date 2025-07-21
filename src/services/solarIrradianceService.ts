@@ -1,18 +1,7 @@
-import ghiData from '../data/ghi.json';
-
 /**
  * Solar Irradiance Service
- * Handles both fallback data and NASA POWER API integration for solar irradiance data
+ * Handles NASA POWER API integration for solar irradiance data
  */
-
-// Type definition for GHI data structure
-interface GHIData {
-  properties: {
-    parameter: {
-      ALLSKY_SFC_SW_DWN: Record<string, number>;
-    };
-  };
-}
 
 // Type definitions for NASA POWER API response
 interface NASAPowerResponse {
@@ -32,54 +21,10 @@ interface NASAPowerResponse {
 const NASA_POWER_BASE_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point';
 const SOLAR_PARAMETER = 'ALLSKY_SFC_SW_DWN'; // All Sky Surface Shortwave Downward Irradiance
 
-/**
- * Extract and process solar irradiance data (GHI - Global Horizontal Irradiance)
- * Reorders data by calendar day (Jan 1 - Dec 31) and converts to relative multipliers
- */
-function processSolarIrradiance(): number[] {
-  const typedGhiData = ghiData as GHIData;
-  const ghiEntries = Object.entries(typedGhiData.properties.parameter.ALLSKY_SFC_SW_DWN);
-  
-  // Group GHI data by month-day (MM-DD) regardless of year
-  const ghiByCalendarDay = new Map<string, number>();
-  
-  ghiEntries.forEach(([dateKey, value]) => {
-    // Parse YYYYMMDD format
-    const month = dateKey.substring(4, 6);
-    const day = dateKey.substring(6, 8);
-    const monthDay = `${month}-${day}`;
-    
-    ghiByCalendarDay.set(monthDay, value);
-  });
-  
-  // Create ordered array from Jan 1 to Dec 31
-  const orderedGHI: number[] = [];
-  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  
-  for (let month = 1; month <= 12; month++) {
-    for (let day = 1; day <= daysInMonth[month - 1]; day++) {
-      const monthDay = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const value = ghiByCalendarDay.get(monthDay);
-      
-      if (value !== undefined) {
-        orderedGHI.push(value);
-      } else {
-        // If no data for this calendar day, use average of available data
-        const availableValues = Array.from(ghiByCalendarDay.values());
-        const average = availableValues.reduce((sum, val) => sum + val, 0) / availableValues.length;
-        orderedGHI.push(average);
-      }
-    }
-  }
-  
-  // Calculate the maximum GHI value for normalization
-  const maxGHI = Math.max(...orderedGHI);
-  
-  // Normalize to create relative multipliers (0-1 range)
-  // These represent the relative solar potential for each day
-  const normalizedValues = orderedGHI.map(value => value / maxGHI);
-  
-  return normalizedValues;
+// Type for solar irradiance data with location-specific maximum
+interface SolarIrradianceData {
+  normalizedValues: number[];
+  maxIrradianceWh: number;
 }
 
 /**
@@ -87,9 +32,9 @@ function processSolarIrradiance(): number[] {
  * 
  * @param latitude - Location latitude
  * @param longitude - Location longitude
- * @returns Promise resolving to normalized solar irradiance data for 365 days
+ * @returns Promise resolving to normalized solar irradiance data and location-specific maximum
  */
-async function fetchNASAPowerData(latitude: number, longitude: number): Promise<number[]> {
+async function fetchNASAPowerData(latitude: number, longitude: number): Promise<SolarIrradianceData> {
   // Get date range for the past year (API has 5-day delay)
   const endDate = new Date();
   endDate.setDate(endDate.getDate() - 5); // Account for API delay
@@ -192,114 +137,114 @@ async function fetchNASAPowerData(latitude: number, longitude: number): Promise<
   // Normalize to create relative multipliers (0-1 range)
   const normalizedValues = orderedIrradiance.map(value => value / maxIrradiance);
   
-  console.log(`Successfully processed NASA POWER data: ${normalizedValues.length} days, max irradiance: ${maxIrradiance.toFixed(2)} kWh/m²/day`);
+  console.log(`Successfully processed NASA POWER data: ${normalizedValues.length} days, max irradiance: ${maxIrradiance.toFixed(2)} Wh/m²/day`);
   
-  return normalizedValues;
+  return {
+    normalizedValues,
+    maxIrradianceWh: maxIrradiance
+  };
 }
 
 /**
  * Get solar irradiance data from NASA POWER API
- * Falls back to local data if API is unavailable or coordinates are not provided
+ * Requires valid coordinates and throws an error if data cannot be fetched
  * 
  * @param latitude - Location latitude (required for API call)
  * @param longitude - Location longitude (required for API call)
- * @returns Promise resolving to normalized solar irradiance data for 365 days
+ * @returns Promise resolving to solar irradiance data with normalized values and location-specific maximum
+ * @throws Error if coordinates are missing or API call fails
  */
 export async function getApiSolarIrradiance(
   latitude?: number, 
   longitude?: number
-): Promise<number[]> {
+): Promise<SolarIrradianceData> {
+  // Require coordinates to be provided
+  if (latitude === undefined || longitude === undefined) {
+    throw new Error('Location coordinates are required to fetch solar data. Please select a location on the map.');
+  }
+
+  console.log(`Attempting to fetch solar data for coordinates: ${latitude}, ${longitude}`);
+  
   try {
-    // If coordinates are provided, try to fetch from NASA POWER API
-    if (latitude !== undefined && longitude !== undefined) {
-      console.log(`Attempting to fetch solar data for coordinates: ${latitude}, ${longitude}`);
-      
-      try {
-        const apiData = await fetchNASAPowerData(latitude, longitude);
-        
-        // Validate the API data
-        if (!Array.isArray(apiData) || apiData.length !== 365) {
-          throw new Error(`Invalid API data: expected array of 365 values, got ${apiData?.length || 'invalid'}`);
-        }
-        
-        // Validate that all values are numbers between 0 and 1
-        const invalidValues = apiData.filter(val => 
-          typeof val !== 'number' || val < 0 || val > 1 || isNaN(val)
-        );
-        
-        if (invalidValues.length > 0) {
-          throw new Error(`Invalid API values: ${invalidValues.length} values out of range`);
-        }
-        
-        console.log('Successfully retrieved and validated NASA POWER API data');
-        return apiData;
-        
-      } catch (apiError) {
-        console.warn('NASA POWER API failed, falling back to local data:', apiError);
-        // Fall through to use local fallback data
-      }
-    } else {
-      console.log('No coordinates provided, using fallback solar data');
+    const apiData = await fetchNASAPowerData(latitude, longitude);
+    
+    // Validate the API data
+    if (!apiData || !Array.isArray(apiData.normalizedValues) || apiData.normalizedValues.length !== 365) {
+      throw new Error(`Invalid API response: expected 365 daily values, received ${apiData?.normalizedValues?.length || 'invalid data'}`);
     }
     
-    // Fall back to processed local data
-    const irradianceData = processSolarIrradiance();
-    
-    // Validate the fallback data
-    if (!Array.isArray(irradianceData) || irradianceData.length !== 365) {
-      throw new Error('Invalid solar irradiance data: expected array of 365 values');
-    }
-    
-    // Validate that all values are numbers between 0 and 1
-    const invalidValues = irradianceData.filter(val => 
+    // Check for values that are out of valid range and fix them
+    const invalidValues = apiData.normalizedValues.filter(val => 
       typeof val !== 'number' || val < 0 || val > 1 || isNaN(val)
     );
     
     if (invalidValues.length > 0) {
-      throw new Error(`Invalid solar irradiance values: ${invalidValues.length} values out of range`);
-    }
-    
-    return irradianceData;
-    
-  } catch (error) {
-    console.error('Error fetching solar irradiance data:', error);
-    
-    // Return fallback data in case of error
-    try {
-      return processSolarIrradiance();
-    } catch (fallbackError) {
-      console.error('Error processing fallback solar irradiance data:', fallbackError);
+      console.warn(`Found ${invalidValues.length} invalid solar data values out of valid range (0-1):`, invalidValues);
+      console.warn('Setting invalid values to 0 and continuing...');
       
-      // Return a basic fallback pattern if everything fails
-      // Summer peak around day 172 (June 21st), winter low around day 355 (December 21st)
-      console.log('Using mathematical fallback pattern for solar irradiance');
-      return Array.from({ length: 365 }, (_, dayIndex) => {
-        const angle = (dayIndex * 2 * Math.PI) / 365;
-        return Math.max(0.1, 0.5 + 0.4 * Math.sin(angle - Math.PI / 2));
-      });
+      // Fix invalid values by setting them to 0
+      for (let i = 0; i < apiData.normalizedValues.length; i++) {
+        const val = apiData.normalizedValues[i];
+        if (typeof val !== 'number' || val < 0 || val > 1 || isNaN(val)) {
+          apiData.normalizedValues[i] = 0;
+        }
+      }
     }
+    
+    console.log('Successfully retrieved and validated NASA POWER API data');
+    return apiData;
+    
+  } catch (apiError) {
+    console.error('NASA POWER API failed:', apiError);
+    
+    // Provide more specific error messages based on the type of error
+    if (apiError instanceof Error) {
+      if (apiError.message.includes('NASA POWER API request failed')) {
+        throw new Error(`Unable to fetch solar data for this location. The NASA POWER API service may be temporarily unavailable. Please try again later or select a different location.`);
+      } else if (apiError.message.includes('No irradiance data received')) {
+        throw new Error(`No solar data available for the selected location. Please try a different location with better data coverage.`);
+      } else if (apiError.message.includes('Invalid')) {
+        throw new Error(`Invalid solar data received for this location. Please try selecting a different location.`);
+      }
+    }
+    
+    // Generic error message for any other failures
+    throw new Error(`Failed to retrieve solar data for the selected location (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Please verify the location is valid and try again.`);
   }
 }
 
 /**
  * Validate solar irradiance data
  * 
- * @param data - Array of irradiance values to validate
+ * @param data - Solar irradiance data object to validate
  * @returns true if data is valid, false otherwise
  */
-export function validateSolarIrradianceData(data: unknown): data is number[] {
-  if (!Array.isArray(data)) {
+export function validateSolarIrradianceData(data: unknown): data is SolarIrradianceData {
+  if (!data || typeof data !== 'object') {
     return false;
   }
   
-  if (data.length !== 365) {
+  const solarData = data as SolarIrradianceData;
+  
+  if (!Array.isArray(solarData.normalizedValues)) {
     return false;
   }
   
-  return data.every(val => 
+  if (solarData.normalizedValues.length !== 365) {
+    return false;
+  }
+  
+  if (typeof solarData.maxIrradianceWh !== 'number' || solarData.maxIrradianceWh <= 0) {
+    return false;
+  }
+  
+  return solarData.normalizedValues.every(val => 
     typeof val === 'number' && 
     val >= 0 && 
     val <= 1 && 
     !isNaN(val)
   );
 }
+
+// Export the type for use in other modules
+export type { SolarIrradianceData };
