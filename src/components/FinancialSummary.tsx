@@ -1,12 +1,15 @@
+
+import type { EnergyCalculations } from '../types'
 import './FinancialSummary.css'
 
 interface FinancialSummaryProps {
-  totalCost?: number | null
-  savings?: number | null
-  roi?: number | null
+  energyCalculations?: EnergyCalculations | null
+  installationCost?: number | null
+  peakCost?: number | null
+  offPeakCost?: number | null
 }
 
-function FinancialSummary({ totalCost, savings, roi }: FinancialSummaryProps) {
+function FinancialSummary({ energyCalculations, installationCost, peakCost, offPeakCost }: FinancialSummaryProps) {
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) {
       return '--'
@@ -21,6 +24,10 @@ function FinancialSummary({ totalCost, savings, roi }: FinancialSummaryProps) {
     return `${value.toFixed(1)}%`
   }
 
+  // TODO calculate costs
+  const savings = 0;
+  const roi = 0;
+
   return (
     <div className="financial-summary-section">
       <div className="summary-header">
@@ -29,11 +36,11 @@ function FinancialSummary({ totalCost, savings, roi }: FinancialSummaryProps) {
       </div>
       <div className="summary-content">
         <div className="summary-item">
-          <label>Total Cost:</label>
-          <span className="value">{formatCurrency(totalCost)}</span>
+          <label>Installation Cost:</label>
+          <span className="value">{formatCurrency(installationCost)}</span>
         </div>
         <div className="summary-item">
-          <label>Savings:</label>
+          <label>Savings (per year):</label>
           <span className="value">{formatCurrency(savings)}</span>
         </div>
         <div className="summary-item">

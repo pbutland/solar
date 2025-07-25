@@ -3,41 +3,76 @@ import './CostInputs.css'
 
 interface CostInputsProps {
   installationSize: number
-  onCostChange?: (installationCost: number | null, peakCost: number | null, offPeakCost: number | null, feedInTariff: number | null) => void
+  batterySize: number
+  onCostChange?: (solarCost: number | null, batteryCost: number | null, peakCost: number | null, offPeakCost: number | null, feedInTariff: number | null) => void
 }
 
-function CostInputs({ installationSize, onCostChange }: CostInputsProps) {
-  const [installationCost, setInstallationCost] = useState<string>('')
+function CostInputs({ installationSize, batterySize, onCostChange }: CostInputsProps) {
+  const [solarCost, setSolarCost] = useState<string>('1000')
+  const [batteryCost, setBatteryCost] = useState<string>('1000')
   const [peakCost, setPeakCost] = useState<string>('')
   const [offPeakCost, setOffPeakCost] = useState<string>('')
   const [feedInTariff, setFeedInTariff] = useState<string>('')
 
-  // Set default installation cost when installationSize changes
+  // Set default solar and battery cost when installationSize or batterySize changes
   useEffect(() => {
-    const defaultCost = (installationSize * 1000).toFixed(2)
-    setInstallationCost(defaultCost)
+    setSolarCost('1000')
+    setBatteryCost('1000')
     if (onCostChange) {
-      const numValue = parseFloat(defaultCost)
+      const solarValue = solarCost === '' ? null : parseFloat(solarCost)
+      const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const peakValue = peakCost === '' ? null : parseFloat(peakCost)
       const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
       const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
-      onCostChange(numValue, isNaN(peakValue!) ? null : peakValue, isNaN(offPeakValue!) ? null : offPeakValue, isNaN(feedInValue!) ? null : feedInValue)
+      onCostChange(
+        isNaN(solarValue!) ? null : solarValue,
+        isNaN(batteryValue!) ? null : batteryValue,
+        isNaN(peakValue!) ? null : peakValue,
+        isNaN(offPeakValue!) ? null : offPeakValue,
+        isNaN(feedInValue!) ? null : feedInValue
+      )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [installationSize])
+  }, [installationSize, batterySize])
 
 
   // No formatting for input fields; just store the raw value
 
-  const handleInstallationCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSolarCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setInstallationCost(value)
+    setSolarCost(value)
     const numValue = value === '' ? null : parseFloat(value)
     if (onCostChange && (!isNaN(numValue!) || numValue === null)) {
+      const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const peakValue = peakCost === '' ? null : parseFloat(peakCost)
       const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
       const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
-      onCostChange(numValue, isNaN(peakValue!) ? null : peakValue, isNaN(offPeakValue!) ? null : offPeakValue, isNaN(feedInValue!) ? null : feedInValue)
+      onCostChange(
+        numValue,
+        isNaN(batteryValue!) ? null : batteryValue,
+        isNaN(peakValue!) ? null : peakValue,
+        isNaN(offPeakValue!) ? null : offPeakValue,
+        isNaN(feedInValue!) ? null : feedInValue
+      )
+    }
+  }
+
+  const handleBatteryCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setBatteryCost(value)
+    const numValue = value === '' ? null : parseFloat(value)
+    if (onCostChange && (!isNaN(numValue!) || numValue === null)) {
+      const solarValue = solarCost === '' ? null : parseFloat(solarCost)
+      const peakValue = peakCost === '' ? null : parseFloat(peakCost)
+      const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
+      const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
+      onCostChange(
+        isNaN(solarValue!) ? null : solarValue,
+        numValue,
+        isNaN(peakValue!) ? null : peakValue,
+        isNaN(offPeakValue!) ? null : offPeakValue,
+        isNaN(feedInValue!) ? null : feedInValue
+      )
     }
   }
 
@@ -46,10 +81,17 @@ function CostInputs({ installationSize, onCostChange }: CostInputsProps) {
     setPeakCost(value)
     const numValue = value === '' ? null : parseFloat(value)
     if (onCostChange && (!isNaN(numValue!) || numValue === null)) {
-      const installationValue = installationCost === '' ? null : parseFloat(installationCost)
+      const solarValue = solarCost === '' ? null : parseFloat(solarCost)
+      const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
       const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
-      onCostChange(isNaN(installationValue!) ? null : installationValue, numValue, isNaN(offPeakValue!) ? null : offPeakValue, isNaN(feedInValue!) ? null : feedInValue)
+      onCostChange(
+        isNaN(solarValue!) ? null : solarValue,
+        isNaN(batteryValue!) ? null : batteryValue,
+        numValue,
+        isNaN(offPeakValue!) ? null : offPeakValue,
+        isNaN(feedInValue!) ? null : feedInValue
+      )
     }
   }
 
@@ -58,10 +100,17 @@ function CostInputs({ installationSize, onCostChange }: CostInputsProps) {
     setOffPeakCost(value)
     const numValue = value === '' ? null : parseFloat(value)
     if (onCostChange && (!isNaN(numValue!) || numValue === null)) {
-      const installationValue = installationCost === '' ? null : parseFloat(installationCost)
+      const solarValue = solarCost === '' ? null : parseFloat(solarCost)
+      const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const peakValue = peakCost === '' ? null : parseFloat(peakCost)
       const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
-      onCostChange(isNaN(installationValue!) ? null : installationValue, isNaN(peakValue!) ? null : peakValue, numValue, isNaN(feedInValue!) ? null : feedInValue)
+      onCostChange(
+        isNaN(solarValue!) ? null : solarValue,
+        isNaN(batteryValue!) ? null : batteryValue,
+        isNaN(peakValue!) ? null : peakValue,
+        numValue,
+        isNaN(feedInValue!) ? null : feedInValue
+      )
     }
   }
 
@@ -70,56 +119,83 @@ function CostInputs({ installationSize, onCostChange }: CostInputsProps) {
     setFeedInTariff(value)
     const numValue = value === '' ? null : parseFloat(value)
     if (onCostChange && (!isNaN(numValue!) || numValue === null)) {
-      const installationValue = installationCost === '' ? null : parseFloat(installationCost)
+      const solarValue = solarCost === '' ? null : parseFloat(solarCost)
+      const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const peakValue = peakCost === '' ? null : parseFloat(peakCost)
       const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
-      onCostChange(isNaN(installationValue!) ? null : installationValue, isNaN(peakValue!) ? null : peakValue, offPeakValue, numValue)
+      onCostChange(
+        isNaN(solarValue!) ? null : solarValue,
+        isNaN(batteryValue!) ? null : batteryValue,
+        isNaN(peakValue!) ? null : peakValue,
+        isNaN(offPeakValue!) ? null : offPeakValue,
+        numValue
+      )
     }
   }
 
   return (
     <div className="cost-inputs-section">
       <h3>Cost Configuration</h3>
-      <input 
-        type="number" 
-        id="installation-cost" 
-        name="installation-cost" 
-        step="any" 
-        min="0" 
-        placeholder="Installation cost ($)"
-        value={installationCost}
-        onChange={handleInstallationCostChange}
-      />
-      <input 
-        type="number" 
-        id="peak-cost" 
-        name="peak-cost" 
-        step="any" 
-        min="0" 
-        placeholder="Peak rate (c/kWh)"
-        value={peakCost}
-        onChange={handlePeakCostChange}
-      />
-      <input 
-        type="number" 
-        id="off-peak-cost" 
-        name="off-peak-cost" 
-        step="any" 
-        min="0" 
-        placeholder="Off-peak rate (c/kWh)"
-        value={offPeakCost}
-        onChange={handleOffPeakCostChange}
-      />
-      <input 
-        type="number" 
-        id="feed-in-tarriff" 
-        name="feed-in-tarriff" 
-        step="any" 
-        min="0" 
-        placeholder="Solar feed-in tariff (c/kWh)"
-        value={feedInTariff}
-        onChange={handleFeedInTariffChange}
-      />
+      <div className="cost-input-row">
+        <label htmlFor="solar-cost">Solar Cost ($/kW)</label>
+        <input
+          type="number"
+          id="solar-cost"
+          name="solar-cost"
+          step="any"
+          min="0"
+          value={solarCost}
+          onChange={handleSolarCostChange}
+        />
+      </div>
+      <div className="cost-input-row">
+        <label htmlFor="battery-cost">Battery Cost ($/kWh)</label>
+        <input
+          type="number"
+          id="battery-cost"
+          name="battery-cost"
+          step="any"
+          min="0"
+          value={batteryCost}
+          onChange={handleBatteryCostChange}
+        />
+      </div>
+      <div className="cost-input-row">
+        <label htmlFor="peak-cost">Peak rate (c/kWh)</label>
+        <input
+          type="number"
+          id="peak-cost"
+          name="peak-cost"
+          step="any"
+          min="0"
+          value={peakCost}
+          onChange={handlePeakCostChange}
+        />
+      </div>
+      <div className="cost-input-row">
+        <label htmlFor="off-peak-cost">Off-peak rate (c/kWh)</label>
+        <input
+          type="number"
+          id="off-peak-cost"
+          name="off-peak-cost"
+          step="any"
+          min="0"
+          value={offPeakCost}
+          onChange={handleOffPeakCostChange}
+        />
+      </div>
+      <div className="cost-input-row">
+        <label htmlFor="feed-in-tarriff">Solar feed-in tariff (c/kWh)</label>
+        <input
+          type="number"
+          id="feed-in-tarriff"
+          name="feed-in-tarriff"
+          step="any"
+          min="0"
+          value={feedInTariff}
+          onChange={handleFeedInTariffChange}
+        />
+      </div>
     </div>
   )
 }

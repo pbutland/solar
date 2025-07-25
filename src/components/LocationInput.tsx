@@ -34,30 +34,34 @@ function LocationInput({ onLocationChange }: LocationInputProps) {
   return (
     <div className="latlong-section">
       <h3>Location Coordinates</h3>
-      {/* <label htmlFor="latitude">Latitude:</label> */}
-      <input 
-        type="number" 
-        id="latitude" 
-        name="latitude" 
-        step="any" 
-        min="-90" 
-        max="90" 
-        placeholder="Latitude (e.g. -37.8136)"
-        value={latitude}
-        onChange={handleLatitudeChange}
-      />
-      {/* <label htmlFor="longitude">Longitude:</label> */}
-      <input 
-        type="number" 
-        id="longitude" 
-        name="longitude" 
-        step="any" 
-        min="-180" 
-        max="180" 
-        placeholder="Longitude (e.g. 144.9631)"
-        value={longitude}
-        onChange={handleLongitudeChange}
-      />
+      <div className="location-input-row">
+        <label htmlFor="latitude">Latitude</label>
+        <input
+          type="number"
+          id="latitude"
+          name="latitude"
+          step="any"
+          min="-90"
+          max="90"
+          placeholder="e.g. -37.8136"
+          value={latitude}
+          onChange={handleLatitudeChange}
+        />
+      </div>
+      <div className="location-input-row">
+        <label htmlFor="longitude">Longitude</label>
+        <input 
+          type="number" 
+          id="longitude" 
+          name="longitude" 
+          step="any" 
+          min="-180" 
+          max="180" 
+          placeholder="e.g. 144.9631"
+          value={longitude}
+          onChange={handleLongitudeChange}
+        />
+      </div>
     </div>
   )
 }

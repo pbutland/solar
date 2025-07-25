@@ -12,6 +12,7 @@ import { getApiSolarIrradiance } from './services/solarIrradianceService'
 
 function App() {
   const [installationSize, setInstallationSize] = useState(6)
+  const [batterySize, setBatterySize] = useState(0)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false)
   const [solarError, setSolarError] = useState<string | null>(null)
@@ -150,8 +151,8 @@ function App() {
     setUploadSuccess(false)
   }
 
-  const handleCostChange = (instCost: number | null, peak: number | null, offPeak: number | null) => {
-    setInstallationCost(instCost)
+  const handleCostChange = (solarCost: number | null, batteryCost: number | null, peak: number | null, offPeak: number | null) => {
+    setInstallationCost((solarCost || 0) * installationSize + (batteryCost || 0) * batterySize)
     setPeakCost(peak)
     setOffPeakCost(offPeak)
     setFeedInTariff(feedInTariff)
@@ -201,7 +202,9 @@ function App() {
         <main>
           <InstallationControls 
             installationSize={installationSize}
+            batterySize={batterySize}
             onInstallationSizeChange={setInstallationSize}
+            onBatterySizeChange={setBatterySize}
           />
           <div className="chart-section">
             <EnergyChart 
@@ -213,11 +216,12 @@ function App() {
       )}
       {/* {hasSolarData && (
         <div className="input-section">
-          <CostInputs installationSize={installationSize} onCostChange={handleCostChange} />
+          <CostInputs installationSize={installationSize} batterySize={batterySize} onCostChange={handleCostChange} />
           <FinancialSummary
-            totalCost={installationCost}
-            savings={null}
-            roi={null}
+            energyCalculations={energyCalculations}
+            installationCost={installationCost}
+            peakCost={peakCost}
+            offPeakCost={offPeakCost}
           />
         </div>
       )} */}

@@ -1,7 +1,28 @@
+.location-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.location-input-row label {
+  margin-right: auto;
+  color: #222;
+  font-weight: 500;
+  text-align: right;
+  flex: 0.5;
+}
+
+.location-input-row input {
+  text-align: left;
+  margin-left: auto;
+  flex: 1;
+}
+
 .latlong-section {
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
+  gap: 1rem;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
@@ -17,7 +38,6 @@
 
 .latlong-section input[type="number"] {
   padding: 0.5rem;
-  margin-bottom: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;

@@ -62,7 +62,6 @@
 .chart-wrapper {
   width: 100%;
   margin: 20px 0;
-  height: 450px; /* Adds extra space for chart + labels */
 }
 
 @media (max-width: 768px) {
@@ -104,7 +103,6 @@
 }
 
 .chart-legend-extended {
-  margin-top: 30px;
   padding: 15px;
   background: #f8f9fa;
   border-radius: 6px;
@@ -113,15 +111,8 @@
   z-index: 1; /* Ensure it's above chart elements if there's any overlap */
 }
 
-@media (max-width: 768px) {
-  .chart-legend-extended {
-    margin-top: 25px;
-  }
-}
-
 @media (max-width: 480px) {
   .chart-legend-extended {
-    margin-top: 20px;
     padding: 10px;
   }
 }
