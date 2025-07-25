@@ -5,19 +5,25 @@ import InstallationControls from './components/InstallationControls'
 import FileUpload from './components/FileUpload'
 import LocationInput from './components/LocationInput'
 import HelpSection from './components/HelpSection'
-import type { EnergyUsageEntry, ProcessedData } from './types/index.js'
-import { getApiSolarIrradiance } from './services/solarIrradianceService.js'
-import { processUploadedData } from './utils/dataProcessor.ts'
+import CostInputs from './components/CostInputs'
+import FinancialSummary from './components/FinancialSummary'
+import type { EnergyData, EnergyCalculations } from './types/index'
+import { getApiSolarIrradiance } from './services/solarIrradianceService'
 
 function App() {
   const [installationSize, setInstallationSize] = useState(6)
-  const [uploadedData, setUploadedData] = useState<ProcessedData | null>(null)
-  const [solarIrradiance, setSolarIrradiance] = useState<number[] | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false)
   const [solarError, setSolarError] = useState<string | null>(null)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
   const [isLoadingSolar, setIsLoadingSolar] = useState<boolean>(false)
+  const [energyCalculations, setEnergyCalculations] = useState<EnergyCalculations | null>(null)
+
+  // Financial state
+  const [installationCost, setInstallationCost] = useState<number | null>(null)
+  const [peakCost, setPeakCost] = useState<number | null>(null)
+  const [offPeakCost, setOffPeakCost] = useState<number | null>(null)
+  const [feedInTariff, setFeedInTariff] = useState<number | null>(null)
 
   const validateCoordinates = (latitude: number | null, longitude: number | null): boolean => {
     if (latitude === null || longitude === null) {
@@ -43,10 +49,25 @@ function App() {
       console.log('Loading solar irradiance for location:', { latitude, longitude })
       setSolarError(null) // Clear any previous errors
       const irradiance = await getApiSolarIrradiance(latitude, longitude)
-      setSolarIrradiance(irradiance)
+      if (energyCalculations) {
+        // Update calculations with new data
+        energyCalculations.periodInMinutes = irradiance.periodInMinutes
+        energyCalculations.generationSolar = irradiance.values;
+        setEnergyCalculations(energyCalculations);
+      } else {
+        // Initialize calculations if not already done
+        const newCalculations = {
+          periodInMinutes: irradiance.periodInMinutes,
+          generationSolar: irradiance.values,
+        };
+        setEnergyCalculations(newCalculations);
+      }
     } catch (error) {
       console.error('Failed to load solar irradiance data:', error)
-      setSolarIrradiance(null)
+      if (energyCalculations) {
+        energyCalculations.generationSolar = undefined;
+        setEnergyCalculations(energyCalculations);
+      }
       if (error instanceof Error) {
         setSolarError(error.message)
       } else {
@@ -74,7 +95,10 @@ function App() {
       setDebounceTimer(timer)
     } else {
       // Clear data and errors for invalid/incomplete coordinates
-      setSolarIrradiance(null)
+      if (energyCalculations) {
+        energyCalculations.generationSolar = undefined;
+        setEnergyCalculations(energyCalculations);
+      }
       setSolarError(null)
     }
   }
@@ -88,15 +112,24 @@ function App() {
     }
   }, [debounceTimer])
 
-  const handleDataLoaded = async (data: EnergyUsageEntry[]) => {
+  const handleDataLoaded = async (data: EnergyData) => {
     try {
-      // Check if we have solar irradiance data
-      if (!solarIrradiance) {
-        throw new Error('Solar data is required for analysis. Please enter a location first.')
+      if (data) {
+        const calculations = energyCalculations;
+        if (calculations) {
+          // Update calculations with new data
+          calculations.periodInMinutes = data.periodInMinutes
+          calculations.totalConsumption = data.values;
+          setEnergyCalculations(calculations);
+        } else {
+          // Initialize calculations if not already done
+          const newCalculations = {
+            periodInMinutes: data.periodInMinutes,
+            totalConsumption: data.values,
+          };
+          setEnergyCalculations(newCalculations);
+        }
       }
-      
-      const processedData = processUploadedData(data, solarIrradiance)
-      setUploadedData(processedData)
       setUploadError(null)
       setUploadSuccess(true)
       
@@ -117,8 +150,15 @@ function App() {
     setUploadSuccess(false)
   }
 
-  const hasConsumptionData = uploadedData?.dailyConsumption && uploadedData.dailyConsumption.length > 0;
-  const hasSolarData = solarIrradiance && solarIrradiance.length === 365;
+  const handleCostChange = (instCost: number | null, peak: number | null, offPeak: number | null) => {
+    setInstallationCost(instCost)
+    setPeakCost(peak)
+    setOffPeakCost(offPeak)
+    setFeedInTariff(feedInTariff)
+  }
+
+  const hasConsumptionData = energyCalculations && energyCalculations?.totalConsumption && energyCalculations.totalConsumption.length > 0;
+  const hasSolarData = energyCalculations && energyCalculations?.generationSolar && energyCalculations.generationSolar.length > 0;
 
   return (
     <div className="app">
@@ -166,12 +206,21 @@ function App() {
           <div className="chart-section">
             <EnergyChart 
               installationSizeKW={installationSize}
-              uploadedData={uploadedData}
-              solarIrradiance={solarIrradiance}
+              energyCalculations={energyCalculations}
             />
           </div>
         </main>
       )}
+      {/* {hasSolarData && (
+        <div className="input-section">
+          <CostInputs installationSize={installationSize} onCostChange={handleCostChange} />
+          <FinancialSummary
+            totalCost={installationCost}
+            savings={null}
+            roi={null}
+          />
+        </div>
+      )} */}
       <HelpSection />
     </div>
   )

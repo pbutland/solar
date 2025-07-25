@@ -10,14 +10,15 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import type { ProcessedData } from '../types/index.js';
-import { calculateDailyGeneration, calculateNetEnergy, calculateSolarRadiation } from '../utils/solarCalculations';
+import type { EnergyCalculations, TimePeriod } from '../types/index';
+import { calculateDailyGeneration, calculateNetEnergy } from '../utils/solarCalculations';
+import { aggregateEnergyCalculationsToPeriod } from '../utils/chartUtils';
 import './EnergyChart.css';
 
 interface EnergyChartProps {
   installationSizeKW: number;
-  uploadedData: ProcessedData | null;
-  solarIrradiance: number[] | null;
+  energyCalculations: EnergyCalculations | null;
+  timePeriod?: TimePeriod;
 }
 
 interface ChartDataPoint {
@@ -33,27 +34,31 @@ interface ChartDataPoint {
  * Displays daily consumption and solar generation data with dual y-axis
  * Shows net energy calculation and uses color coding for surplus/deficit days
  */
-const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedData, solarIrradiance }) => {
-  const hasConsumptionData = uploadedData?.dailyConsumption && uploadedData.dailyConsumption.length > 0;
-  const hasSolarData = solarIrradiance && solarIrradiance.length === 365;
+const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, energyCalculations, timePeriod = 'day' }) => {
+  const hasConsumptionData = energyCalculations !== null && energyCalculations !== undefined && energyCalculations.totalConsumption;
+  const hasSolarData = energyCalculations !== null && energyCalculations !== undefined && energyCalculations.generationSolar;
   if (!hasConsumptionData && !hasSolarData) {
     return null;
   }
+
+  const aggregatedUsage = energyCalculations
+    ? aggregateEnergyCalculationsToPeriod(energyCalculations, timePeriod)
+    : null;  
   
   // Calculate daily generation only if we have solar irradiance data
-  const dailyGeneration = hasSolarData 
-    ? calculateDailyGeneration(installationSizeKW, solarIrradiance)
+  const dailySolarIrradiance: number[] = aggregatedUsage?.generationSolar
+    ? aggregatedUsage.generationSolar.map(entry => entry.value) || []
     : [];
-  
-  // Calculate solar radiation data for display
-  const dailySolarRadiation = hasSolarData
-    ? calculateSolarRadiation(solarIrradiance)
+  const dailyGeneration: number[] = dailySolarIrradiance.length > 0
+    ? calculateDailyGeneration(installationSizeKW, dailySolarIrradiance)
     : [];
-  
+
+  const dailyConsumption: number[] = aggregatedUsage?.totalConsumption
+    ? aggregatedUsage.totalConsumption.map(entry => entry.value) || []
+    : [];
+
   // Calculate net energy only if we have both consumption and generation data
-  const netEnergyData = hasConsumptionData && hasSolarData && uploadedData.dailyConsumption
-    ? calculateNetEnergy(uploadedData.dailyConsumption, dailyGeneration)
-    : [];
+  const netEnergyData: number[] = dailyConsumption.length > 0 && dailyGeneration.length > 0 ? calculateNetEnergy(dailyConsumption, dailyGeneration) : [];
 
   // Month names for x-axis labels
   const shortMonthNames = [
@@ -76,14 +81,12 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
     let monthlyGeneration = 0;
     let monthlyConsumption = 0;
     let monthlyNetEnergy = 0;
-    let monthlySolarRadiation = 0;
     for (let day = startDay; day < endDay; day++) {
       if (hasSolarData) {
         monthlyGeneration += dailyGeneration[day] || 0;
-        monthlySolarRadiation += dailySolarRadiation[day] || 0;
       }
-      if (hasConsumptionData && uploadedData.dailyConsumption) {
-        monthlyConsumption += uploadedData.dailyConsumption[day] || 0;
+      if (dailyConsumption) {
+        monthlyConsumption += dailyConsumption[day] || 0;
         monthlyNetEnergy += netEnergyData[day] || 0;
       }
     }
@@ -103,8 +106,8 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ installationSizeKW, uploadedD
   let totalNetEnergy = 0;
   let surplusDays = 0;
   let deficitDays = 0;
-  if (hasConsumptionData && uploadedData.dailyConsumption) {
-    totalConsumption = uploadedData.dailyConsumption.reduce((sum: number, val: number) => sum + val, 0);
+  if (dailyConsumption) {
+    totalConsumption = dailyConsumption.reduce((sum: number, val: number) => sum + val, 0);
     totalNetEnergy = totalGeneration - totalConsumption;
     surplusDays = netEnergyData.filter((net: number) => net > 0).length;
     deficitDays = 365 - surplusDays;

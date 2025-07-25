@@ -1,4 +1,4 @@
-.latlong-section {
+.cost-inputs-section {
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
@@ -8,14 +8,14 @@
   flex: 1;
 }
 
-.latlong-section h3 {
+.cost-inputs-section h3 {
   margin-top: 0;
   color: #2c3e50;
   font-size: 1.25rem;
   text-align: center;
 }
 
-.latlong-section input[type="number"] {
+.cost-inputs-section input[type="number"] {
   padding: 0.5rem;
   margin-bottom: 1rem;
   border: 1px solid #ddd;
@@ -27,11 +27,11 @@
   outline: none;
 }
 
-.latlong-section input[type="number"]:focus {
+.cost-inputs-section input[type="number"]:focus {
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-.latlong-section input:invalid {
+.cost-inputs-section input:invalid {
   border-color: #f44336;
 }

@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { processCsvData } from '../utils/csvProcessor.ts';
-import type { EnergyUsageEntry } from '../types/index.js';
+import { processCsvData } from '../utils/csvProcessor';
+import type { EnergyData } from '../types/index';
 import './FileUpload.css';
 
 interface FileUploadProps {
-  onDataLoaded: (data: EnergyUsageEntry[]) => void;
+  onDataLoaded: (data: EnergyData) => void;
   onError: (error: string) => void;
 }
 
@@ -26,10 +26,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
           complete: (results) => {
             try {
               const processedData = processCsvData(results.data as any[]);
-              if (processedData.length === 0) {
-                onError('No valid energy usage data found in the CSV file.');
-                return;
-              }
               onDataLoaded(processedData);
             } catch (error) {
               if (error instanceof Error) {

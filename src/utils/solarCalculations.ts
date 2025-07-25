@@ -6,19 +6,6 @@ import { solarSystemConstants } from '../config/solarConstants.js';
  */
 
 /**
- * Calculate daily solar radiation from irradiance data
- * @param solarIrrdianceWh - Array of 365 daily irradiance values in Wh/m²/day
- * @returns Array of solar radiation values in kWh/m²/day
- */
-export function calculateSolarRadiation(solarIrrdianceWh: number[]): number[] {
-  // Convert from Wh/m²/day to kWh/m²/day
-  return solarIrrdianceWh.map(irradianceWh => {
-    const irradianceKWh = irradianceWh / solarSystemConstants.wattsToKilowatts; // Convert Wh to kWh
-    return Math.round(irradianceKWh * 100) / 100; // Round to 2 decimal places
-  });
-}
-
-/**
  * Calculate daily solar generation based on installation size and solar irradiance
  * @param installationSizeKW - Size of solar installation in kilowatts (1-50kW)
  * @param solarIrrdianceWh - Array of 365 daily irradiance values in Wh/m²/day
@@ -28,19 +15,13 @@ export function calculateSolarRadiation(solarIrrdianceWh: number[]): number[] {
  */
 export function calculateDailyGeneration(
   installationSizeKW: number,
-  solarIrrdianceWh: number[],
-  panelEfficiency: number = solarSystemConstants.panelEfficiency,
-  systemLosses: number = solarSystemConstants.systemLosses
+  solarIrrdianceWh: number[]
 ): number[] {
   // Validate input parameters
   if (installationSizeKW < 1 || installationSizeKW > 50) {
     throw new Error('Installation size must be between 1kW and 50kW');
   }
   
-  if (solarIrrdianceWh.length !== 365) {
-    throw new Error('Solar irradiance array must contain exactly 365 values');
-  }
-
   return solarIrrdianceWh.map(irradianceWh => {
     // Convert irradiance from Wh/m²/day to kWh/m²/day
     const dailyGhiKWh = irradianceWh / solarSystemConstants.wattsToKilowatts;
@@ -49,10 +30,10 @@ export function calculateDailyGeneration(
     const panelAreaM2 = (installationSizeKW * solarSystemConstants.wattsToKilowatts) / solarSystemConstants.panelPowerDensityWPerM2; // Convert kW to W, then to m²
     
     // Calculate raw generation: GHI × Panel Area × Panel Efficiency
-    const rawGeneration = dailyGhiKWh * panelAreaM2 * panelEfficiency;
+    const rawGeneration = dailyGhiKWh * panelAreaM2 * solarSystemConstants.panelEfficiency;
     
     // Apply system losses (inverter efficiency, wiring losses, etc.)
-    const finalGeneration = rawGeneration * (1 - systemLosses);
+    const finalGeneration = rawGeneration * (1 - solarSystemConstants.systemLosses);
     
     return Math.round(finalGeneration * 100) / 100; // Round to 2 decimal places
   });
@@ -69,230 +50,14 @@ export function calculateNetEnergy(
   dailyConsumption: number[],
   dailyGeneration: number[]
 ): number[] {
-  if (dailyConsumption.length !== dailyGeneration.length) {
-    throw new Error('Consumption and generation arrays must have the same length');
-  }
+  // if (dailyConsumption.length !== dailyGeneration.length) {
+  //   throw new Error('Consumption and generation arrays must have the same length');
+  // }
+
 
   return dailyConsumption.map((consumption, index) => {
     const generation = dailyGeneration[index];
     const netEnergy = generation - consumption;
     return Math.round(netEnergy * 100) / 100; // Round to 2 decimal places
   });
-}
-
-/**
- * Calculate space requirements for solar installation
- * @param installationSizeKW - Size of solar installation in kilowatts
- * @param spacePerKW - Space required per kW in square meters (default: 7m²)
- * @returns Object containing space requirements in different units
- */
-export function calculateSpaceRequirements(
-  installationSizeKW: number,
-  spacePerKW: number = solarSystemConstants.spacePerKW
-): {
-  squareMeters: number;
-  squareFeet: number;
-  approximatePanels: number;
-  roofPercentage: number;
-} {
-  // Validate installation size
-  if (installationSizeKW < 1 || installationSizeKW > 50) {
-    throw new Error('Installation size must be between 1kW and 50kW');
-  }
-
-  const squareMeters = installationSizeKW * spacePerKW;
-  const squareFeet = squareMeters * solarSystemConstants.squareMetersToSquareFeet; // Convert m² to ft²
-  
-  // Estimate number of panels
-  const approximatePanels = Math.ceil((installationSizeKW * solarSystemConstants.wattsToKilowatts) / solarSystemConstants.individualPanelWattage);
-  
-  // Estimate roof percentage
-  const roofPercentage = (squareMeters / solarSystemConstants.averageRoofSizeM2) * 100;
-
-  return {
-    squareMeters: Math.round(squareMeters * 10) / 10,
-    squareFeet: Math.round(squareFeet * 10) / 10,
-    approximatePanels,
-    roofPercentage: Math.round(roofPercentage * 10) / 10
-  };
-}
-
-/**
- * Validate installation size is within acceptable range
- * @param installationSizeKW - Size to validate
- * @returns Object with validation result and any error message
- */
-export function validateInstallationSize(installationSizeKW: number): {
-  isValid: boolean;
-  errorMessage?: string;
-  warnings?: string[];
-} {
-  const warnings: string[] = [];
-
-  // Check if it's a valid number
-  if (isNaN(installationSizeKW) || installationSizeKW <= 0) {
-    return {
-      isValid: false,
-      errorMessage: 'Installation size must be a positive number'
-    };
-  }
-
-  // Check range limits
-  if (installationSizeKW < 1) {
-    return {
-      isValid: false,
-      errorMessage: 'Installation size must be at least 1kW'
-    };
-  }
-
-  if (installationSizeKW > 50) {
-    return {
-      isValid: false,
-      errorMessage: 'Installation size cannot exceed 50kW for this application'
-    };
-  }
-
-  // Add warnings for edge cases
-  if (installationSizeKW < 3) {
-    warnings.push('Small installations may have higher per-kW costs');
-  }
-
-  if (installationSizeKW > 30) {
-    warnings.push('Large installations may require special electrical upgrades');
-  }
-
-  return {
-    isValid: true,
-    warnings: warnings.length > 0 ? warnings : undefined
-  };
-}
-
-/**
- * Calculate annual summary statistics
- * @param dailyConsumption - Array of daily consumption values
- * @param dailyGeneration - Array of daily generation values
- * @returns Summary statistics for the year
- */
-export function calculateAnnualSummary(
-  dailyConsumption: number[],
-  dailyGeneration: number[]
-): {
-  totalConsumption: number;
-  totalGeneration: number;
-  netEnergy: number;
-  selfSufficiencyPercentage: number;
-  surplusDays: number;
-  deficitDays: number;
-  averageDailyConsumption: number;
-  averageDailyGeneration: number;
-} {
-  const totalConsumption = dailyConsumption.reduce((sum, val) => sum + val, 0);
-  const totalGeneration = dailyGeneration.reduce((sum, val) => sum + val, 0);
-  const netEnergy = totalGeneration - totalConsumption;
-  
-  const netEnergyDaily = calculateNetEnergy(dailyConsumption, dailyGeneration);
-  const surplusDays = netEnergyDaily.filter(net => net > 0).length;
-  const deficitDays = netEnergyDaily.filter(net => net < 0).length;
-  
-  // Self-sufficiency: how much of consumption is met by generation
-  const selfSufficiencyPercentage = Math.min((totalGeneration / totalConsumption) * 100, 100);
-
-  return {
-    totalConsumption: Math.round(totalConsumption * 100) / 100,
-    totalGeneration: Math.round(totalGeneration * 100) / 100,
-    netEnergy: Math.round(netEnergy * 100) / 100,
-    selfSufficiencyPercentage: Math.round(selfSufficiencyPercentage * 10) / 10,
-    surplusDays,
-    deficitDays,
-    averageDailyConsumption: Math.round((totalConsumption / 365) * 100) / 100,
-    averageDailyGeneration: Math.round((totalGeneration / 365) * 100) / 100
-  };
-}
-
-/**
- * Helper function to get monthly aggregated data for charting
- * @param dailyData - Array of daily values
- * @returns Array of monthly totals
- */
-export function aggregateToMonthly(dailyData: number[]): number[] {
-  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  const monthlyData: number[] = [];
-  
-  let dayIndex = 0;
-  
-  for (let month = 0; month < 12; month++) {
-    let monthlyTotal = 0;
-    const days = daysInMonth[month];
-    
-    for (let day = 0; day < days && dayIndex < dailyData.length; day++) {
-      monthlyTotal += dailyData[dayIndex];
-      dayIndex++;
-    }
-    
-    monthlyData.push(Math.round(monthlyTotal * 100) / 100);
-  }
-  
-  return monthlyData;
-}
-
-/**
- * Get daily solar radiation data for the current location
- * @param solarIrrdianceWh - Array of 365 daily irradiance values in Wh/m²/day
- * @returns Array of 365 daily solar radiation values in kWh/m²/day
- */
-export function getDailySolarRadiation(solarIrrdianceWh: number[]): number[] {
-  return calculateSolarRadiation(solarIrrdianceWh);
-}
-
-/**
- * Main calculation function that combines all calculations for a given installation size
- * This is the primary function that components will use
- * @param installationSizeKW - Size of solar installation in kilowatts
- * @param dailyConsumption - Array of daily consumption values in kWh
- * @param solarIrrdianceWh - Array of 365 daily irradiance values in Wh/m²/day
- * @returns Complete calculation results including solar radiation
- */
-export function calculateSolarSystem(
-  installationSizeKW: number,
-  dailyConsumption: number[],
-  solarIrrdianceWh: number[]
-) {
-  // Validate installation size
-  const validation = validateInstallationSize(installationSizeKW);
-  if (!validation.isValid) {
-    throw new Error(validation.errorMessage);
-  }
-
-  // Validate input data
-  if (!Array.isArray(dailyConsumption) || dailyConsumption.length !== 365) {
-    throw new Error('Daily consumption must be an array of 365 values');
-  }
-
-  if (!Array.isArray(solarIrrdianceWh) || solarIrrdianceWh.length !== 365) {
-    throw new Error('Solar irradiance must be an array of 365 values');
-  }
-
-  // Perform all calculations
-  const dailyGeneration = calculateDailyGeneration(
-    installationSizeKW,
-    solarIrrdianceWh,
-    solarSystemConstants.panelEfficiency,
-    solarSystemConstants.systemLosses
-  );
-
-  const solarRadiation = calculateSolarRadiation(solarIrrdianceWh);
-  
-  const netEnergy = calculateNetEnergy(dailyConsumption, dailyGeneration);
-  const spaceRequirements = calculateSpaceRequirements(installationSizeKW);
-  const annualSummary = calculateAnnualSummary(dailyConsumption, dailyGeneration);
-
-  return {
-    installationSize: installationSizeKW,
-    dailyGeneration,
-    solarRadiation,
-    netEnergy,
-    spaceRequirements,
-    annualSummary,
-    validation
-  };
 }
