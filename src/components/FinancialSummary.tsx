@@ -5,11 +5,10 @@ import './FinancialSummary.css'
 interface FinancialSummaryProps {
   energyCalculations?: EnergyCalculations | null
   installationCost?: number | null
-  peakCost?: number | null
-  offPeakCost?: number | null
+  earnings?: boolean
 }
 
-function FinancialSummary({ energyCalculations, installationCost, peakCost, offPeakCost }: FinancialSummaryProps) {
+function FinancialSummary({ energyCalculations, installationCost, earnings = false }: FinancialSummaryProps) {
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) {
       return '--'
@@ -17,16 +16,40 @@ function FinancialSummary({ energyCalculations, installationCost, peakCost, offP
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
-  const formatPercentage = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) {
-      return '--'
-    }
-    return `${value.toFixed(1)}%`
+  // Calculate savings only if both totalConsumption and generationSolar exist
+  let savings: number | undefined = undefined;
+  if (
+    energyCalculations?.totalConsumption &&
+    energyCalculations?.generationSolar &&
+    Array.isArray(energyCalculations.nonSolarConsumptionCost) &&
+    Array.isArray(energyCalculations.consumptionCost) &&
+    energyCalculations.nonSolarConsumptionCost.length > 0 &&
+    energyCalculations.consumptionCost.length > 0
+  ) {
+    const totalNonSolar = energyCalculations.nonSolarConsumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+    const totalConsumption = energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+    console.log('Total Non-Solar Cost:', totalNonSolar);
+    console.log('Total Consumption Cost:', totalConsumption);
+    savings = totalNonSolar - totalConsumption;
   }
 
-  // TODO calculate costs
-  const savings = 0;
-  const roi = 0;
+  // Calculate ROI if installationCost and savings are valid numbers
+  let roiYears: number | undefined = undefined;
+  let roiPercent: number | undefined = undefined;
+  if (
+    typeof installationCost === 'number' && installationCost > 0 &&
+    typeof savings === 'number' && savings > 0
+  ) {
+    roiYears = installationCost / savings;
+    roiPercent = (savings / installationCost) * 100;
+  }
+
+  const formatROI = (years: number | undefined, percent: number | undefined): string => {
+    if (years === undefined || percent === undefined) {
+      return '--';
+    }
+    return `${years.toFixed(2)} years (${percent.toFixed(1)}%)`;
+  };
 
   return (
     <div className="financial-summary-section">
@@ -40,12 +63,12 @@ function FinancialSummary({ energyCalculations, installationCost, peakCost, offP
           <span className="value">{formatCurrency(installationCost)}</span>
         </div>
         <div className="summary-item">
-          <label>Savings (per year):</label>
-          <span className="value">{formatCurrency(savings)}</span>
+          <label>{earnings ? 'Earnings' : 'Savings'} (per year):</label>
+          <span className="value">{savings === undefined ? '--' : formatCurrency(savings)}</span>
         </div>
         <div className="summary-item">
           <label>ROI:</label>
-          <span className="value">{formatPercentage(roi)}</span>
+          <span className="value">{formatROI(roiYears, roiPercent)}</span>
         </div>
       </div>
     </div>

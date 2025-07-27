@@ -18,13 +18,31 @@ export interface EnergyData {
 }
 
 export interface EnergyCalculations {
-  periodInMinutes?: number; // Period in minutes for the energy data
-  generationSolar?: EnergyPeriodEntry[]; // Solar generation data
-  consumptionGrid?: EnergyPeriodEntry[]; // Energy grid consumption data
-  consumptionSolar?: EnergyPeriodEntry[]; // Energy solar consumption data
-  consumptionBattery?: EnergyPeriodEntry[]; // Energy battery consumption data
-  totalConsumption?: EnergyPeriodEntry[]; // Total energy consumption data
-  consumptionCost?: number[]; // Cost of energy consumption
+  periodInMinutes?: number;
+  generationSolar?: EnergyPeriodEntry[];
+  exportedSolar?: EnergyPeriodEntry[];
+  consumptionGrid?: EnergyPeriodEntry[];
+  consumptionSolar?: EnergyPeriodEntry[];
+  consumptionBattery?: EnergyPeriodEntry[];
+  totalConsumption?: EnergyPeriodEntry[];
+  consumptionCost?: number[];
+  nonSolarConsumptionCost?: number[];
+}
+
+export interface EnergySystemDetails {
+  installationSize?: number;
+  batteryCapacity?: number;
+  rawSolarIrradiance?: EnergyPeriodEntry[];
+  peakCost?: number | null;
+  offPeakCost?: number | null;
+  feedInTariff?: number | null;
+}
+
+export interface FinancialSummary {
+  installationCost?: number;
+  savings?: number;
+  paybackPeriod?: number;
+  returnOnInvestment?: number;
 }
 
 export type TimePeriod = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';

@@ -7,6 +7,7 @@ const HelpSection: React.FC = () => {
     dataUpload: false,
     solarData: false,
     calculations: false,
+    financial: false,
     troubleshooting: false
   });
 
@@ -33,16 +34,18 @@ const HelpSection: React.FC = () => {
           {expandedSections.overview && (
             <div className="help-content">
               <p>
-                The Solar Power Optimizer helps you understand how solar panels could benefit your home by:
+                The Solar Power Optimizer helps you understand how solar panels and batteries could benefit your home by:
               </p>
               <ul>
                 <li>Analyzing your electricity usage patterns</li>
                 <li>Calculating potential solar generation based on your location</li>
-                <li>Visualizing how different solar installation sizes could offset your energy consumption</li>
+                <li>Visualizing how different solar installation sizes and battery capacities could offset your energy consumption</li>
+                <li>Estimating financial outcomes based on your electricity rates and solar feed-in tariffs</li>
               </ul>
               <p>
                 To get started, select your location on the map and upload your energy usage data from Origin.
-                Then adjust the installation size to see how different system capacities would perform.
+                Then adjust the installation size and battery capacity to see how different system configurations would perform.
+                Enter your electricity rates and feed-in tariff in the <strong>Cost Configuration</strong> section to see a financial summary tailored to your situation.
               </p>
             </div>
           )}
@@ -184,6 +187,43 @@ const HelpSection: React.FC = () => {
         <div className="help-item">
           <div 
             className="help-header" 
+            onClick={() => toggleSection('financial')}
+          >
+            <h3>Financial Costing & Battery</h3>
+            <span className="expand-icon">{expandedSections.financial ? '−' : '+'}</span>
+          </div>
+          {expandedSections.financial && (
+            <div className="help-content">
+              <h4>Battery Size</h4>
+              <p>
+                <strong>Battery Capacity</strong> (in kWh) lets you model the effect of adding a battery to your solar system. Increasing the battery size allows more excess solar energy to be stored for use at night or during peak times, reducing your reliance on grid electricity and potentially increasing your savings.
+              </p>
+              <ul>
+                <li>Set the battery size to 0 to model a solar-only system.</li>
+                <li>Increase the value to see how a larger battery can further reduce grid usage and costs.</li>
+              </ul>
+              <h4>Cost Configuration</h4>
+              <p>
+                The <strong>Cost Configuration</strong> section allows you to enter your electricity rates and solar system costs:
+              </p>
+              <ul>
+                <li><strong>Solar Cost ($/kW):</strong> The installed cost per kW of solar panels.</li>
+                <li><strong>Battery Cost ($/kWh):</strong> The installed cost per kWh of battery storage.</li>
+                <li><strong>Peak rate (c/kWh):</strong> The rate you pay for electricity during peak times. <em>Enter this value in cents per kWh (e.g., 35 for $0.35/kWh).</em></li>
+                <li><strong>Off-peak rate (c/kWh):</strong> The rate you pay for electricity during off-peak times. <em>Enter this value in cents per kWh.</em></li>
+                <li><strong>Solar feed-in tariff (c/kWh):</strong> The rate you receive for exporting excess solar energy to the grid. <em>Enter this value in cents per kWh.</em></li>
+              </ul>
+              <h4>Financial Summary</h4>
+              <p>
+                The <strong>Financial Summary</strong> estimates your annual electricity costs and potential savings based on your system configuration and rates. Adjust the installation size, battery capacity, and cost inputs to see how your choices affect your bottom line.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="help-item">
+          <div 
+            className="help-header" 
             onClick={() => toggleSection('troubleshooting')}
           >
             <h3>Troubleshooting</h3>
@@ -224,6 +264,7 @@ const HelpSection: React.FC = () => {
         </div>
       </div>
     </div>
+
   );
 };
 

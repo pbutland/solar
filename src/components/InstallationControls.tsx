@@ -3,16 +3,16 @@ import './InstallationControls.css';
 
 interface InstallationControlsProps {
   installationSize: number;
-  batterySize: number;
+  batteryCapacity: number;
   onInstallationSizeChange: (size: number) => void;
-  onBatterySizeChange: (size: number) => void;
+  onBatteryCapacityChange: (size: number) => void;
 }
 
 const InstallationControls: React.FC<InstallationControlsProps> = ({
   installationSize,
-  batterySize,
+  batteryCapacity,
   onInstallationSizeChange,
-  onBatterySizeChange,
+  onBatteryCapacityChange,
 }) => {
   // Calculate space requirements (7m² per kW)
   const spaceRequired = installationSize * 7;
@@ -32,9 +32,9 @@ const InstallationControls: React.FC<InstallationControlsProps> = ({
   };
 
   // Handle battery size slider change
-  const handleBatterySizeChange = (value: number) => {
+  const handleBatteryCapacityChange = (value: number) => {
     const roundedValue = Math.round(value * 2) / 2; // Round to nearest 0.5
-    onBatterySizeChange(roundedValue);
+    onBatteryCapacityChange(roundedValue);
   };
 
   return (
@@ -64,14 +64,14 @@ const InstallationControls: React.FC<InstallationControlsProps> = ({
       </div>
 
       <div className="slider-group">
-        <h3>Battery: {batterySize} kWh</h3>
+        <h3>Battery: {batteryCapacity} kWh</h3>
         <input
           type="range"
           min="0"
           max="40"
           step="1"
-          value={batterySize}
-          onChange={(e) => handleBatterySizeChange(Number(e.target.value))}
+          value={batteryCapacity}
+          onChange={(e) => handleBatteryCapacityChange(Number(e.target.value))}
         />
       </div>
     </div>

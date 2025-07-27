@@ -3,27 +3,29 @@ import './CostInputs.css'
 
 interface CostInputsProps {
   installationSize: number
-  batterySize: number
+  batteryCapacity: number
   onCostChange?: (solarCost: number | null, batteryCost: number | null, peakCost: number | null, offPeakCost: number | null, feedInTariff: number | null) => void
 }
 
-function CostInputs({ installationSize, batterySize, onCostChange }: CostInputsProps) {
+function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInputsProps) {
   const [solarCost, setSolarCost] = useState<string>('1000')
   const [batteryCost, setBatteryCost] = useState<string>('1000')
+  // Store cents in UI, but convert to dollars for logic
   const [peakCost, setPeakCost] = useState<string>('')
   const [offPeakCost, setOffPeakCost] = useState<string>('')
   const [feedInTariff, setFeedInTariff] = useState<string>('')
 
-  // Set default solar and battery cost when installationSize or batterySize changes
+  // Set default solar and battery cost when installationSize or batteryCapacity changes
   useEffect(() => {
     setSolarCost('1000')
     setBatteryCost('1000')
     if (onCostChange) {
       const solarValue = solarCost === '' ? null : parseFloat(solarCost)
       const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
-      const peakValue = peakCost === '' ? null : parseFloat(peakCost)
-      const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
-      const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
+      // Convert cents to dollars for callback
+      const peakValue = peakCost === '' ? null : parseFloat(peakCost) / 100
+      const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost) / 100
+      const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff) / 100
       onCostChange(
         isNaN(solarValue!) ? null : solarValue,
         isNaN(batteryValue!) ? null : batteryValue,
@@ -33,7 +35,7 @@ function CostInputs({ installationSize, batterySize, onCostChange }: CostInputsP
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [installationSize, batterySize])
+  }, [installationSize, batteryCapacity])
 
 
   // No formatting for input fields; just store the raw value
@@ -85,12 +87,13 @@ function CostInputs({ installationSize, batterySize, onCostChange }: CostInputsP
       const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
       const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
+      // Convert cents to dollars for callback
       onCostChange(
         isNaN(solarValue!) ? null : solarValue,
         isNaN(batteryValue!) ? null : batteryValue,
-        numValue,
-        isNaN(offPeakValue!) ? null : offPeakValue,
-        isNaN(feedInValue!) ? null : feedInValue
+        numValue === null || isNaN(numValue) ? null : numValue / 100,
+        offPeakValue === null || isNaN(offPeakValue) ? null : offPeakValue / 100,
+        feedInValue === null || isNaN(feedInValue) ? null : feedInValue / 100
       )
     }
   }
@@ -104,12 +107,13 @@ function CostInputs({ installationSize, batterySize, onCostChange }: CostInputsP
       const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const peakValue = peakCost === '' ? null : parseFloat(peakCost)
       const feedInValue = feedInTariff === '' ? null : parseFloat(feedInTariff)
+      // Convert cents to dollars for callback
       onCostChange(
         isNaN(solarValue!) ? null : solarValue,
         isNaN(batteryValue!) ? null : batteryValue,
-        isNaN(peakValue!) ? null : peakValue,
-        numValue,
-        isNaN(feedInValue!) ? null : feedInValue
+        peakValue === null || isNaN(peakValue) ? null : peakValue / 100,
+        numValue === null || isNaN(numValue) ? null : numValue / 100,
+        feedInValue === null || isNaN(feedInValue) ? null : feedInValue / 100
       )
     }
   }
@@ -123,12 +127,13 @@ function CostInputs({ installationSize, batterySize, onCostChange }: CostInputsP
       const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)
       const peakValue = peakCost === '' ? null : parseFloat(peakCost)
       const offPeakValue = offPeakCost === '' ? null : parseFloat(offPeakCost)
+      // Convert cents to dollars for callback
       onCostChange(
         isNaN(solarValue!) ? null : solarValue,
         isNaN(batteryValue!) ? null : batteryValue,
-        isNaN(peakValue!) ? null : peakValue,
-        isNaN(offPeakValue!) ? null : offPeakValue,
-        numValue
+        peakValue === null || isNaN(peakValue) ? null : peakValue / 100,
+        offPeakValue === null || isNaN(offPeakValue) ? null : offPeakValue / 100,
+        numValue === null || isNaN(numValue) ? null : numValue / 100
       )
     }
   }

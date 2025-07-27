@@ -66,6 +66,7 @@ export function aggregateEnergyCalculationsToPeriod(
   return {
     ...calculations,
     periodInMinutes: targetPeriod,
+    exportedSolar: aggregateArray(calculations.exportedSolar, periodInMinutes),
     generationSolar: aggregateArray(calculations.generationSolar, periodInMinutes),
     consumptionGrid: aggregateArray(calculations.consumptionGrid, periodInMinutes),
     consumptionSolar: aggregateArray(calculations.consumptionSolar, periodInMinutes),

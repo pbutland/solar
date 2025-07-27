@@ -7,24 +7,63 @@ import LocationInput from './components/LocationInput'
 import HelpSection from './components/HelpSection'
 import CostInputs from './components/CostInputs'
 import FinancialSummary from './components/FinancialSummary'
-import type { EnergyData, EnergyCalculations } from './types/index'
+import type { EnergyData, EnergyCalculations, EnergySystemDetails } from './types/index'
 import { getApiSolarIrradiance } from './services/solarIrradianceService'
+import { calculateConsumptionData, calculateSolarGeneration } from './utils/solarCalculations'
+
 
 function App() {
   const [installationSize, setInstallationSize] = useState(6)
-  const [batterySize, setBatterySize] = useState(0)
+  const [batteryCapacity, setBatteryCapacity] = useState(0)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false)
   const [solarError, setSolarError] = useState<string | null>(null)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
   const [isLoadingSolar, setIsLoadingSolar] = useState<boolean>(false)
   const [energyCalculations, setEnergyCalculations] = useState<EnergyCalculations | null>(null)
+  const [rawSolarIrradiance, setRawSolarIrradiance] = useState<EnergyData | null>(null)
 
-  // Financial state
-  const [installationCost, setInstallationCost] = useState<number | null>(null)
-  const [peakCost, setPeakCost] = useState<number | null>(null)
-  const [offPeakCost, setOffPeakCost] = useState<number | null>(null)
-  const [feedInTariff, setFeedInTariff] = useState<number | null>(null)
+  // Financial state (grouped)
+  const [costDetails, setCostDetails] = useState({
+    installationCost: null as number | null,
+    peakCost: null as number | null,
+    offPeakCost: null as number | null,
+    feedInTariff: null as number | null,
+  });
+
+  // Update energyCalculations with both solar and consumption calculations together
+  useEffect(() => {
+    if (rawSolarIrradiance) {
+      const generationSolar = rawSolarIrradiance.values.map(entry => ({
+        date: entry.date,
+        value: calculateSolarGeneration(installationSize, entry.value)
+      }));
+      // If we have consumption data, use it, otherwise empty array
+      const totalConsumption = energyCalculations && energyCalculations.totalConsumption ? energyCalculations.totalConsumption : [];
+      const base: EnergyCalculations = {
+        periodInMinutes: rawSolarIrradiance.periodInMinutes,
+        generationSolar,
+        totalConsumption,
+      };
+      // Always run calculateConsumptionData so the state is always fully processed
+      const systemDetails: EnergySystemDetails = {
+        installationSize,
+        batteryCapacity,
+        rawSolarIrradiance: rawSolarIrradiance.values,
+        peakCost: costDetails.peakCost,
+        offPeakCost: costDetails.offPeakCost,
+        feedInTariff: costDetails.feedInTariff,
+      };
+      setEnergyCalculations(calculateConsumptionData(base, systemDetails));
+    }
+  }, [
+    installationSize,
+    batteryCapacity,
+    rawSolarIrradiance,
+    costDetails.peakCost,
+    costDetails.offPeakCost,
+    costDetails.feedInTariff,
+  ]);
 
   const validateCoordinates = (latitude: number | null, longitude: number | null): boolean => {
     if (latitude === null || longitude === null) {
@@ -50,19 +89,7 @@ function App() {
       console.log('Loading solar irradiance for location:', { latitude, longitude })
       setSolarError(null) // Clear any previous errors
       const irradiance = await getApiSolarIrradiance(latitude, longitude)
-      if (energyCalculations) {
-        // Update calculations with new data
-        energyCalculations.periodInMinutes = irradiance.periodInMinutes
-        energyCalculations.generationSolar = irradiance.values;
-        setEnergyCalculations(energyCalculations);
-      } else {
-        // Initialize calculations if not already done
-        const newCalculations = {
-          periodInMinutes: irradiance.periodInMinutes,
-          generationSolar: irradiance.values,
-        };
-        setEnergyCalculations(newCalculations);
-      }
+      setRawSolarIrradiance(irradiance)
     } catch (error) {
       console.error('Failed to load solar irradiance data:', error)
       if (energyCalculations) {
@@ -116,24 +143,25 @@ function App() {
   const handleDataLoaded = async (data: EnergyData) => {
     try {
       if (data) {
-        const calculations = energyCalculations;
-        if (calculations) {
-          // Update calculations with new data
-          calculations.periodInMinutes = data.periodInMinutes
-          calculations.totalConsumption = data.values;
-          setEnergyCalculations(calculations);
-        } else {
-          // Initialize calculations if not already done
-          const newCalculations = {
-            periodInMinutes: data.periodInMinutes,
-            totalConsumption: data.values,
-          };
-          setEnergyCalculations(newCalculations);
-        }
+        // If we have solar data, use it, otherwise empty array
+        const generationSolar = energyCalculations && energyCalculations.generationSolar ? energyCalculations.generationSolar : [];
+        const base: EnergyCalculations = {
+          periodInMinutes: data.periodInMinutes,
+          totalConsumption: data.values,
+          generationSolar,
+        };
+        const systemDetails: EnergySystemDetails = {
+          installationSize,
+          batteryCapacity,
+          rawSolarIrradiance: rawSolarIrradiance ? rawSolarIrradiance.values : [],
+          peakCost: costDetails.peakCost,
+          offPeakCost: costDetails.offPeakCost,
+          feedInTariff: costDetails.feedInTariff,
+        };
+        setEnergyCalculations(calculateConsumptionData(base, systemDetails));
       }
       setUploadError(null)
       setUploadSuccess(true)
-      
       // Clear success message after 3 seconds
       setTimeout(() => setUploadSuccess(false), 3000)
     } catch (error) {
@@ -151,11 +179,13 @@ function App() {
     setUploadSuccess(false)
   }
 
-  const handleCostChange = (solarCost: number | null, batteryCost: number | null, peak: number | null, offPeak: number | null) => {
-    setInstallationCost((solarCost || 0) * installationSize + (batteryCost || 0) * batterySize)
-    setPeakCost(peak)
-    setOffPeakCost(offPeak)
-    setFeedInTariff(feedInTariff)
+  const handleCostChange = (solarCost: number | null, batteryCost: number | null, peak: number | null, offPeak: number | null, feedInTariff: number | null) => {
+    setCostDetails({
+      installationCost: (solarCost || 0) * installationSize + (batteryCost || 0) * batteryCapacity,
+      peakCost: peak,
+      offPeakCost: offPeak,
+      feedInTariff: feedInTariff,
+    });
   }
 
   const hasConsumptionData = energyCalculations && energyCalculations?.totalConsumption && energyCalculations.totalConsumption.length > 0;
@@ -202,29 +232,27 @@ function App() {
         <main>
           <InstallationControls 
             installationSize={installationSize}
-            batterySize={batterySize}
+            batteryCapacity={batteryCapacity}
             onInstallationSizeChange={setInstallationSize}
-            onBatterySizeChange={setBatterySize}
+            onBatteryCapacityChange={setBatteryCapacity}
           />
           <div className="chart-section">
             <EnergyChart 
-              installationSizeKW={installationSize}
               energyCalculations={energyCalculations}
             />
           </div>
         </main>
       )}
-      {/* {hasSolarData && (
+      {hasSolarData && (
         <div className="input-section">
-          <CostInputs installationSize={installationSize} batterySize={batterySize} onCostChange={handleCostChange} />
+          <CostInputs installationSize={installationSize} batteryCapacity={batteryCapacity} onCostChange={handleCostChange} />
           <FinancialSummary
             energyCalculations={energyCalculations}
-            installationCost={installationCost}
-            peakCost={peakCost}
-            offPeakCost={offPeakCost}
+            installationCost={costDetails.installationCost}
+            earnings={costDetails.peakCost === null && costDetails.feedInTariff !== null}
           />
         </div>
-      )} */}
+      )}
       <HelpSection />
     </div>
   )
