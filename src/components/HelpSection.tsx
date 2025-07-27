@@ -70,32 +70,10 @@ const HelpSection: React.FC = () => {
                 <li>Jemena CSV (also used by AusNet)</li>
               </ul>
               <p>
-                For a detailed description of each supported file format, including required columns and sample files, see:
+                For a detailed description of each supported file format, including required columns, see:
                 <br />
-                <a href="/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats &amp; Examples</a>
+                <a href="/solar/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats &amp; Examples</a>
               </p>
-              <p>
-                <strong>Origin CSV quick guide:</strong>
-              </p>
-              <ul>
-                <li><code>Usage Type</code> - Must include entries with value "Consumption"</li>
-                <li><code>Amount Used</code> - The energy amount in kWh</li>
-                <li><code>From (date/time)</code> - The timestamp of the consumption period (ISO 8601 date format, e.g. <code>YYYY-MM-DDThh:mm:ss+TZ:00</code>) </li>
-              </ul>
-              <p>
-                This is the standard export format from Origin Energy's systems, so files downloaded directly from Origin should already be in the correct format.
-              </p>
-              <p>
-                You can export this data from your Origin Energy account by:
-              </p>
-              <ol>
-                <li>Log in to your Origin Energy account</li>
-                <li>Navigate to "Usage History" or "Download My Data"</li>
-                <li>Select the data range (ideally 12 months or more)</li>
-                <li>Choose the CSV format option</li>
-                <li>Download and save the file</li>
-                <li>Upload the downloaded file directly to this application</li>
-              </ol>
               <p>
                 <em>Note: The system will process consumption data only and ignore other entries.</em>
               </p>
