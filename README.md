@@ -15,6 +15,8 @@ This project is a React + TypeScript web application for analyzing and visualizi
 
 - `src/components/` — UI components (charts, file upload, controls)
 - `src/utils/` — Data and solar calculation utilities
+- `src/parsers/` — Data parsers for different CSV formats
+- `src/services/` — Data fetching and manipulation services
 - `public/` — Static assets
 
 ## Getting Started
@@ -28,3 +30,7 @@ This project is a React + TypeScript web application for analyzing and visualizi
    npm run dev
    ```
 3. **Open** [http://localhost:5173](http://localhost:5173) in your browser.
+
+## References
+
+https://github.com/charliedotau/Smart-Meter-File-Format-Examples-Aus/tree/master

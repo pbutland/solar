@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supported Data File Formats</title>
+  <style>
+    body {
+      font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+      background-color: #242424;
+      color: #444;
+      margin: 0;
+      padding: 0 0 2rem 0;
+    }
+    
+    .container {
+      max-width: 760px;
+      margin: 2.5rem auto;
+      background: #1a1a1a;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(26,77,122,0.07);
+      padding: 2.5rem 2.5rem 2rem 2.5rem;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      padding: 1.5rem;
+      text-align: left;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+    }
+
+    .container h2 {
+      color: #ff6b35;
+      text-align: center; /* Keep the title centered */
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .container h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    }
+    h1 {
+      margin-top: 0;
+      color: #1769aa;
+      font-size: 2.2rem;
+      letter-spacing: -1px;
+      font-weight: 700;
+    }
+    .format-section {
+      color: #444;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(26,77,122,0.07);
+    }
+
+    .format-section h3 {
+      margin: 0;
+      color: #4a90e2;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .format-section h3 {
+        font-size: 1.1rem;
+      }
+    }
+    ul, ol {
+      margin-bottom: 1.2em;
+    }
+    code {
+      background: #f0f4f8;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+    .format-section {
+      margin-bottom: 2.5rem;
+    }
+    .source-link {
+      font-size: 0.97em;
+      color: #2196f3;
+      text-decoration: underline;
+    }
+    .note {
+      color: #888;
+      font-size: 0.97em;
+      font-style: italic;
+    }
+    @media (prefers-color-scheme: light) {
+      body {
+        background-color: #ffffff;
+        color: #213547;
+      }
+      .container {
+        background: #fff;
+      }
+      code {
+        background: #f3f7fa;
+        color: #1769aa;
+      }
+      .note {
+        color: #4b5a6a;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Supported Data File Formats</h2>
+    <p>This application supports several energy usage data file formats. Please ensure your file matches one of the formats below before uploading.</p>
+
+    <div class="format-section">
+      <h3>1. NEM12 (Australian National Electricity Market)</h3>
+      <p><strong>Description:</strong> Standard format for interval meter data in Australia. Used by many retailers and distributors.</p>
+      <p><strong>Required fields:</strong></p>
+      <ul>
+        <li>NEM12 file must contain <code>200</code> and <code>300</code> record types</li>
+        <li>Interval data is in <code>300</code> records (fields: <code>RecordIndicator</code>, <code>IntervalDate</code>, <code>IntervalValue1</code>, <code>IntervalValue2</code>, ...<code>IntervalValueN</code>)</li>
+      </ul>
+      <p><strong>How to obtain:</strong></p>
+      <ol>
+        <li>Request a NEM12 file from your electricity retailer or distributor (sometimes called "interval data export")</li>
+        <li>Some retailers provide this via your online account or by request</li>
+      </ol>
+      <p class="note">For more on the NEM12 format, see <a class="source-link" href="https://aemo.com.au/-/media/files/electricity/nem/retail_and_metering/metering-procedures/2017/mdff_specification_nem12_nem13_final_v102.pdf" target="_blank" rel="noopener noreferrer">AEMO NEM12 Specification</a>.</p>
+    </div>
+
+    <div class="format-section">
+      <h3>2. Jemena / AusNet CSV</h3>
+      <p><strong>Description:</strong> CSV format used by Jemena and AusNet (identical structure). Available from their customer portals.</p>
+      <p><strong>Required columns:</strong></p>
+      <ul>
+        <li><code>NMI</code> — National Meter Identifier</li>
+        <li><code>Interval Date</code> — Date of the reading (YYYY-MM-DD)</li>
+        <li><code>Interval 1</code>, <code>Interval 2</code>, ... <code>Interval 48</code> — Half-hourly (or <code>Interval 1</code> to <code>Interval 96</code> for 15-min data) usage in kWh</li>
+      </ul>
+      <p><strong>How to obtain:</strong></p>
+      <ol>
+        <li>Log in to your <a href="https://myportal.jemena.com.au/" target="_blank" rel="noopener noreferrer">Jemena</a> or <a href="https://ausnetservices.com.au/" target="_blank" rel="noopener noreferrer">AusNet</a> account</li>
+        <li>Find the section for energy usage or interval data export</li>
+        <li>Select the desired date range and download as CSV</li>
+      </ol>
+    </div>
+
+    <div class="format-section">
+      <h3>3. Origin Energy CSV</h3>
+      <p><strong>Description:</strong> Standard CSV export from Origin Energy online account.</p>
+      <p><strong>Required columns:</strong></p>
+      <ul>
+        <li><code>Usage Type</code> — Must include entries with value <code>Consumption</code></li>
+        <li><code>Amount Used</code> — The energy amount in kWh</li>
+        <li><code>From (date/time)</code> — The timestamp of the consumption period (ISO 8601, e.g. <code>YYYY-MM-DDThh:mm:ss+TZ:00</code>)</li>
+      </ul>
+      <p><strong>How to obtain:</strong></p>
+      <ol>
+        <li>Log in to your <a href="https://www.originenergy.com.au/" target="_blank" rel="noopener noreferrer">Origin Energy</a> account</li>
+        <li>Navigate to <em>Usage History</em> or <em>Download My Data</em></li>
+        <li>Select the data range (ideally 12 months or more)</li>
+        <li>Choose the CSV format option</li>
+        <li>Download and save the file</li>
+      </ol>
+      <p class="note">Note: The system will process consumption data only and ignore other entries.</p>
+    </div>
+
+    <h3>Need help?</h3>
+    <p>If you have trouble exporting your data or your file is not accepted, please check the required columns above or contact your retailer/distributor for assistance.</p>
+  </div>
+</body>
+</html>

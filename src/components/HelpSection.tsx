@@ -62,17 +62,28 @@ const HelpSection: React.FC = () => {
           {expandedSections.dataUpload && (
             <div className="help-content">
               <p>
-                <strong>Important:</strong> The file upload currently only supports CSV data exported from Origin Energy.
+                <strong>Important:</strong> The file upload now supports multiple data formats:
               </p>
-              <p>The CSV file must contain the following columns:</p>
+              <ul>
+                <li>Origin Energy CSV (original format)</li>
+                <li>NEM12 (Australian National Electricity Market standard)</li>
+                <li>Jemena CSV (also used by AusNet)</li>
+              </ul>
+              <p>
+                For a detailed description of each supported file format, including required columns and sample files, see:
+                <br />
+                <a href="/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats &amp; Examples</a>
+              </p>
+              <p>
+                <strong>Origin CSV quick guide:</strong>
+              </p>
               <ul>
                 <li><code>Usage Type</code> - Must include entries with value "Consumption"</li>
                 <li><code>Amount Used</code> - The energy amount in kWh</li>
                 <li><code>From (date/time)</code> - The timestamp of the consumption period (ISO 8601 date format, e.g. <code>YYYY-MM-DDThh:mm:ss+TZ:00</code>) </li>
               </ul>
               <p>
-                This format is the standard export format from Origin Energy's systems, 
-                so files downloaded directly from Origin should already be in the correct format.
+                This is the standard export format from Origin Energy's systems, so files downloaded directly from Origin should already be in the correct format.
               </p>
               <p>
                 You can export this data from your Origin Energy account by:

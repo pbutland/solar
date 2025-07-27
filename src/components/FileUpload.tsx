@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { processCsvData } from '../utils/csvProcessor';
+import { getEnergyCsvParser } from '../parsers/csvProcessor';
 import type { EnergyData } from '../types/index';
 import './FileUpload.css';
 
@@ -20,19 +20,40 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
           return;
         }
 
+        // First, parse with header: false to peek at the first row
         Papa.parse(file, {
-          header: true,
+          header: false,
           skipEmptyLines: true,
-          complete: (results) => {
-            try {
-              const processedData = processCsvData(results.data as any[]);
-              onDataLoaded(processedData);
-            } catch (error) {
-              if (error instanceof Error) {
-                onError(`Error processing file: ${error.message}`);
-              } else {
-                onError('An unknown error occurred during file processing.');
+          complete: (previewResults) => {
+            const firstRow = previewResults.data[0];
+            if (
+              Array.isArray(firstRow) &&
+              ['100', '200', '300'].includes(firstRow[0])
+            ) {
+              // NEM12: use array-of-arrays
+              try {
+                const processedData = getEnergyCsvParser(previewResults.data as string[][]).parse(previewResults.data as string[][]);
+                onDataLoaded(processedData);
+              } catch (error) {
+                onError(error instanceof Error ? `Error processing file: ${error.message}` : 'An unknown error occurred during file processing.');
               }
+            } else {
+              // Not NEM12: re-parse with header: true
+              Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => {
+                  try {
+                    const processedData = getEnergyCsvParser(results.data as any[]).parse(results.data as any[]);
+                    onDataLoaded(processedData);
+                  } catch (error) {
+                    onError(error instanceof Error ? `Error processing file: ${error.message}` : 'An unknown error occurred during file processing.');
+                  }
+                },
+                error: (error: Error) => {
+                  onError(`Error parsing CSV: ${error.message}`);
+                },
+              });
             }
           },
           error: (error: Error) => {
