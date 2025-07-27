@@ -13,29 +13,30 @@ export class JemenaCsvParser implements EnergyCsvParser {
   }
 
   parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
-    let csvRows: { [key: string]: string }[];
-    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && !Array.isArray(data[0])) {
-      csvRows = data as { [key: string]: string }[];
-    } else if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
-      const [header, ...rows] = data as string[][];
-      const keys = header;
-      csvRows = rows.map(row => {
-        const obj: { [key: string]: string } = {};
-        keys.forEach((k, i) => {
-          obj[k] = row[i];
-        });
-        return obj;
-      });
-    } else {
-      throw new Error('Unsupported data format for JemenaCsvParser');
+    const csvRows = data as { [key: string]: string }[];
+    const keys = Object.keys(csvRows[0]);
+    const intervalColumns = keys.filter(k => /\d{2}:\d{2} - \d{2}:\d{2}/.test(k));
+
+    // Aggregate values by date and interval
+    const aggregate: { [dateTime: string]: number } = {};
+    for (const row of csvRows) {
+      const dateStr = row['DATE'];
+      if (!dateStr) continue;
+      for (const interval of intervalColumns) {
+        const value = parseFloat(row[interval]);
+        if (isNaN(value)) continue;
+        const match = interval.match(/(\d{2}:\d{2})/);
+        if (!match) continue;
+        const time = match[1];
+        const dateTime = `${dateStr}T${time}`;
+        if (!aggregate[dateTime]) {
+          aggregate[dateTime] = 0;
+        }
+        aggregate[dateTime] += value;
+      }
     }
 
-    const values = csvRows.map(row => {
-      // Expecting 'Interval Date' in ISO or AU format, and 'kWh' as the value
-      const date = row['Interval Date'];
-      const value = parseFloat(row['kWh']);
-      return { date, value };
-    }).filter(e => e.date && !isNaN(e.value));
+    const values = Object.entries(aggregate).map(([date, value]) => ({ date, value }));
 
     return {
       periodInMinutes,
