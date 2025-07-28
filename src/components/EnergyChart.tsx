@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -81,6 +82,10 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
         dataPoint.consumptionSolar = Math.round((aggregated.consumptionSolar?.[i]?.value || 0) * 100) / 100;
         dataPoint.consumptionBattery = Math.round((aggregated.consumptionBattery?.[i]?.value || 0) * 100) / 100;
         dataPoint.exportedSolar = Math.round((aggregated.exportedSolar?.[i]?.value || 0) * 100) / 100;
+        // Always set totalConsumption if available
+        if (aggregated.totalConsumption) {
+          dataPoint.totalConsumption = Math.round((aggregated.totalConsumption[i]?.value || 0) * 100) / 100;
+        }
       } else if (hasConsumptionData && aggregated.totalConsumption) {
         dataPoint.totalConsumption = Math.round((aggregated.totalConsumption[i]?.value || 0) * 100) / 100;
       } else if (hasSolarData && aggregated.generationSolar) {
@@ -144,7 +149,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
             <p className="tooltip-consumption"><span style={{ color: '#8884d8' }}>●</span>&nbsp;Grid: {data.consumptionGrid} kWh</p>
           )}
           {typeof data.consumptionSolar === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#82ca9d' }}>●</span>&nbsp;Solar Used: {data.consumptionSolar} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#82ca9d' }}>●</span>&nbsp;Solar: {data.consumptionSolar} kWh</p>
           )}
           {typeof data.consumptionBattery === 'number' && (
             <p className="tooltip-consumption"><span style={{ color: '#FFD700' }}>●</span>&nbsp;Battery: {data.consumptionBattery} kWh</p>
@@ -153,7 +158,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
             <p className="tooltip-consumption"><span style={{ color: '#ff7300' }}>●</span>&nbsp;Exported: {data.exportedSolar} kWh</p>
           )}
           {typeof data.totalConsumption === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#8884d8' }}>●</span>&nbsp;Consumption: {data.totalConsumption} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Consumption: {data.totalConsumption} kWh</p>
           )}
           {typeof data.generationSolar === 'number' && (
             <p className="tooltip-consumption"><span style={{ color: '#82ca9d' }}>●</span>&nbsp;Generation: {data.generationSolar} kWh</p>
@@ -275,13 +280,17 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
                 <Bar dataKey="exportedSolar" stackId="a" fill="#ff7300" name="Exported Solar" />
               </>
             )}
-            {/* Only total consumption */}
+            {/* Only total consumption as bar (when not stacked) */}
             {!hasStacked && hasConsumptionData && (
               <Bar dataKey="totalConsumption" fill="#8884d8" name="Total Consumption" />
             )}
             {/* Only solar generation */}
             {!hasStacked && !hasConsumptionData && hasSolarData && (
               <Bar dataKey="generationSolar" fill="#82ca9d" name="Solar Generation" />
+            )}
+            {/* Show totalConsumption as a line only when stacked (i.e., both solar and consumption data are present) */}
+            {hasStacked && hasConsumptionData && (
+              <Line type="monotone" dataKey="totalConsumption" stroke="#0057b8" strokeWidth={2} dot={false} name="Total Consumption" />
             )}
           </ComposedChart>
         </ResponsiveContainer>
