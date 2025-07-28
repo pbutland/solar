@@ -150,6 +150,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
           step="any"
           min="0"
           value={solarCost}
+          placeholder='e.g. 1000'
           onChange={handleSolarCostChange}
         />
       </div>
@@ -162,6 +163,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
           step="any"
           min="0"
           value={batteryCost}
+          placeholder='e.g. 1000'
           onChange={handleBatteryCostChange}
         />
       </div>
@@ -174,6 +176,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
           step="any"
           min="0"
           value={peakCost}
+          placeholder='e.g. 29.72'
           onChange={handlePeakCostChange}
         />
       </div>
@@ -186,6 +189,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
           step="any"
           min="0"
           value={offPeakCost}
+          placeholder='e.g. 23.14'
           onChange={handleOffPeakCostChange}
         />
       </div>
@@ -198,6 +202,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
           step="any"
           min="0"
           value={feedInTariff}
+          placeholder='e.g. 10'
           onChange={handleFeedInTariffChange}
         />
       </div>
