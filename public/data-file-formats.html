@@ -64,6 +64,7 @@
     }
     .powerpal-details {
       margin-top:1em;
+      margin-bottom:1em;
     }
     .powerpal-details summary {
       cursor:pointer;
@@ -285,14 +286,6 @@
         </form>
         <pre id="powerpal-curl" class="powerpal-curl"><code class="code-block">Enter your Device ID and Token above</code></pre>
         <p class="powerpal-tip">Tip: Paste the generated commands above into your terminal to download the CSV files and merge them.</p>
-        <div class="note">
-          <strong>Notes:</strong>
-          <ul>
-            <li>In the Powerpal app there is only the option to export data minute-by-minute or hourly and only allows a maximum of 90 days at a time. However, the <code>curl</code> commands above will download the data in 30 minute intervals.</li>
-            <li>The Powerpal data may not include Controlled Load consumption if the smart meter is not configured to report it. If you have Controlled Load, you may need to manually add that data or check with Powerpal support.</li>
-            <li>The Powerpal API has CORS enabled on their API end-point, so it is not possible for this webapp to obtain the data directly :(</li>
-          </ul>
-        </div>
         <details class="powerpal-details">
           <summary>What are Device ID and Token? How do I find them?</summary>
           <ul>
@@ -303,6 +296,14 @@
             </li>
           </ul>
         </details>
+        <div class="note">
+          <strong>Notes:</strong>
+          <ul>
+            <li>In the Powerpal app there is only the option to export data minute-by-minute or hourly and only allows a maximum of 90 days at a time. However, the <code>curl</code> commands above will download the data in 30 minute intervals.</li>
+            <li>The Powerpal data may not include Controlled Load consumption if the smart meter is not configured to report it. If you have Controlled Load, you may need to manually add that data or check with Powerpal support.</li>
+            <li>The Powerpal API has CORS enabled on their API end-point, so it is not possible for this webapp to obtain the data directly :(</li>
+          </ul>
+        </div>
         <script>
         (function() {
           const MS_PER_DAY = 86400; // seconds in a day
