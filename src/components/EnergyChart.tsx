@@ -35,7 +35,8 @@ interface ChartDataPoint {
  */
 
 
-const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePeriod = 'day' }) => {
+const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePeriod = 'month' }) => {
+  const [localTimePeriod, setLocalTimePeriod] = React.useState<TimePeriod>(timePeriod);
   const hasConsumptionData = Array.isArray(energyCalculations?.totalConsumption) && energyCalculations.totalConsumption.length > 0;
   const hasSolarData = Array.isArray(energyCalculations?.generationSolar) && energyCalculations.generationSolar.length > 0;
   const hasStacked =
@@ -49,64 +50,89 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePerio
     return null;
   }
 
-  const aggregated = energyCalculations ? aggregateEnergyCalculationsToPeriod(energyCalculations, timePeriod) : null;
-  const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const daysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  let dayIndex = 0;
-  const chartData: ChartDataPoint[] = [];
-
-  for (let month = 0; month < 12; month++) {
-    const daysInMonth = daysPerMonth[month];
-    const startDay = dayIndex;
-    const endDay = Math.min(dayIndex + daysInMonth, 365);
-
-    // Stacked case
-    if (hasStacked && aggregated) {
-      let consumptionGrid = 0, consumptionSolar = 0, consumptionBattery = 0, exportedSolar = 0;
-      for (let day = startDay; day < endDay; day++) {
-        consumptionGrid += aggregated.consumptionGrid?.[day]?.value || 0;
-        consumptionSolar += aggregated.consumptionSolar?.[day]?.value || 0;
-        consumptionBattery += aggregated.consumptionBattery?.[day]?.value || 0;
-        exportedSolar += aggregated.exportedSolar?.[day]?.value || 0;
+  const effectiveTimePeriod = localTimePeriod;
+  const aggregated = energyCalculations ? aggregateEnergyCalculationsToPeriod(energyCalculations, effectiveTimePeriod) : null;
+  // Helper to generate chart data for any period
+  function makeChartData(
+    aggregated: any,
+    count: number,
+    labelFn: (i: number) => string,
+    hasStacked: boolean,
+    hasConsumptionData: boolean,
+    hasSolarData: boolean,
+    tooltipLabelFn?: (i: number) => string
+  ): ChartDataPoint[] {
+    const data: ChartDataPoint[] = [];
+    for (let i = 0; i < count; i++) {
+      const dataPoint: ChartDataPoint = { month: labelFn(i) };
+      // Add a tooltipLabel property for week/day
+      if (tooltipLabelFn) {
+        (dataPoint as any).tooltipLabel = tooltipLabelFn(i);
       }
-      chartData.push({
-        month: shortMonthNames[month],
-        consumptionGrid: Math.round(consumptionGrid * 100) / 100,
-        consumptionSolar: Math.round(consumptionSolar * 100) / 100,
-        consumptionBattery: Math.round(consumptionBattery * 100) / 100,
-        exportedSolar: Math.round(exportedSolar * 100) / 100
-      });
-    } else if (hasConsumptionData && aggregated?.totalConsumption) {
-      // Only consumption
-      let totalConsumption = 0;
-      for (let day = startDay; day < endDay; day++) {
-        totalConsumption += aggregated.totalConsumption[day]?.value || 0;
+      if (hasStacked) {
+        dataPoint.consumptionGrid = Math.round((aggregated.consumptionGrid?.[i]?.value || 0) * 100) / 100;
+        dataPoint.consumptionSolar = Math.round((aggregated.consumptionSolar?.[i]?.value || 0) * 100) / 100;
+        dataPoint.consumptionBattery = Math.round((aggregated.consumptionBattery?.[i]?.value || 0) * 100) / 100;
+        dataPoint.exportedSolar = Math.round((aggregated.exportedSolar?.[i]?.value || 0) * 100) / 100;
+      } else if (hasConsumptionData && aggregated.totalConsumption) {
+        dataPoint.totalConsumption = Math.round((aggregated.totalConsumption[i]?.value || 0) * 100) / 100;
+      } else if (hasSolarData && aggregated.generationSolar) {
+        dataPoint.generationSolar = Math.round((aggregated.generationSolar[i]?.value || 0) * 100) / 100;
       }
-      chartData.push({
-        month: shortMonthNames[month],
-        totalConsumption: Math.round(totalConsumption * 100) / 100
-      });
-    } else if (hasSolarData && aggregated?.generationSolar) {
-      // Only solar
-      let generationSolar = 0;
-      for (let day = startDay; day < endDay; day++) {
-        generationSolar += aggregated.generationSolar[day]?.value || 0;
-      }
-      chartData.push({
-        month: shortMonthNames[month],
-        generationSolar: Math.round(generationSolar * 100) / 100
-      });
+      data.push(dataPoint);
     }
-    dayIndex += daysInMonth;
+    return data;
+  }
+
+  let chartData: ChartDataPoint[] = [];
+  if (effectiveTimePeriod === 'month' && aggregated) {
+    chartData = makeChartData(
+      aggregated,
+      12,
+      i => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
+      hasStacked,
+      hasConsumptionData,
+      hasSolarData
+    );
+  } else if (effectiveTimePeriod === 'week' && aggregated) {
+    const numWeeks = Array.isArray(aggregated.totalConsumption)
+      ? aggregated.totalConsumption.length
+      : (Array.isArray(aggregated.generationSolar) ? aggregated.generationSolar.length : 52);
+    chartData = makeChartData(
+      aggregated,
+      numWeeks,
+      i => `${i + 1}`,
+      hasStacked,
+      hasConsumptionData,
+      hasSolarData,
+      i => `Week ${i + 1}`
+    );
+  } else if (effectiveTimePeriod === 'day' && aggregated) {
+    const numDays = Array.isArray(aggregated.totalConsumption)
+      ? aggregated.totalConsumption.length
+      : (Array.isArray(aggregated.generationSolar) ? aggregated.generationSolar.length : 365);
+    chartData = makeChartData(
+      aggregated,
+      numDays,
+      i => `${i + 1}`,
+      hasStacked,
+      hasConsumptionData,
+      hasSolarData,
+      i => `Day ${i + 1}`
+    );
+  } else {
+    chartData = [];
   }
 
   // Custom tooltip formatter
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      // Use tooltipLabel if present, otherwise fallback to label
+      const tooltipLabel = data.tooltipLabel || label;
       return (
         <div className="chart-tooltip">
-          <p className="tooltip-label">{`${label}`}</p>
+          <p className="tooltip-label">{tooltipLabel}</p>
           {typeof data.consumptionGrid === 'number' && (
             <p className="tooltip-consumption"><span style={{ color: '#8884d8' }}>●</span>&nbsp;Grid: {data.consumptionGrid} kWh</p>
           )}
@@ -152,8 +178,18 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePerio
 
   return (
     <div className="energy-chart-container">
-      <div className="chart-header">
-        <h2>Monthly Energy Flows</h2>
+      <div className="chart-header chart-header-rel">
+        <h2 className="chart-title-inline">Monthly Energy Flows</h2>
+        <select
+          value={localTimePeriod}
+          onChange={e => setLocalTimePeriod(e.target.value as TimePeriod)}
+          className="chart-period-select"
+          aria-label="Select time period"
+        >
+          <option value="day">Daily</option>
+          <option value="week">Weekly</option>
+          <option value="month">Monthly</option>
+        </select>
         <div className="chart-summary">
           {hasDailyGeneration && (
             <div className="summary-item">
@@ -192,7 +228,24 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePerio
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={{ stroke: '#ccc' }} />
+            <XAxis
+              dataKey="month"
+              tick={{ fontSize: 12 }}
+              axisLine={{ stroke: '#ccc' }}
+              label={{
+                value:
+                  timePeriod === 'month'
+                    ? 'Month'
+                    : timePeriod === 'week'
+                    ? 'Week'
+                    : timePeriod === 'day'
+                    ? 'Day'
+                    : '',
+                position: 'insideBottom',
+                offset: -5,
+                fontSize: 14
+              }}
+            />
             <YAxis label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} tick={{ fontSize: 12 }} axisLine={{ stroke: '#ccc' }} />
             <Tooltip content={<CustomTooltip />} />
             <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: '10px' }} />

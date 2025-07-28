@@ -1,3 +1,21 @@
+/* Inline style replacements from EnergyChart.tsx */
+.chart-header-rel {
+  position: relative;
+}
+
+.chart-title-inline {
+  display: inline-block;
+  margin-right: 16px;
+}
+
+.chart-period-select {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
 /* EnergyChart Component Styles */
 .energy-chart-container {
   width: 100%;
