@@ -2,7 +2,7 @@ import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
 import { parseISO } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
-import { filterLastYearOfData } from './csvProcessor';
+import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
 
 export class OriginCsvParser implements EnergyCsvParser {
   isValid(data: any[] | string[][]): boolean {
@@ -14,25 +14,7 @@ export class OriginCsvParser implements EnergyCsvParser {
   }
 
   parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
-    let csvRows: { [key: string]: string }[];
-    // If already array-of-objects (from PapaParse with header: true)
-    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && !Array.isArray(data[0])) {
-      csvRows = data as { [key: string]: string }[];
-    } else if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
-      // Convert array-of-arrays to array-of-objects
-      const [header, ...rows] = data as string[][];
-      const keys = header;
-      csvRows = rows.map(row => {
-        const obj: { [key: string]: string } = {};
-        keys.forEach((k, i) => {
-          obj[k] = row[i];
-        });
-        return obj;
-      });
-    } else {
-      throw new Error('Unsupported data format for OriginCsvParser');
-    }
-
+    const csvRows = data as { [key: string]: string }[];
     const blockConsumption: { [key: string]: number } = {};
 
     for (const row of csvRows) {
@@ -106,13 +88,15 @@ export class OriginCsvParser implements EnergyCsvParser {
       }
     }
 
-    const entries = Object.entries(blockConsumption)
+    const rawValues = Object.entries(blockConsumption)
       .map(([date, value]) => ({ date, value }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+    const processedData = aggregateToInterval(rawValues, periodInMinutes);
+      
     return {
       periodInMinutes,
-      values: filterLastYearOfData(entries)
+      values: filterLastYearOfData(processedData)
     };
   }
 }

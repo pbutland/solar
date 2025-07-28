@@ -5,6 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Supported Data File Formats</title>
   <style>
+    .toc {
+      margin-bottom: 2rem;
+      background: #f3f7fa;
+      border-radius: 6px;
+      padding: 0.5em;
+      box-shadow: 0 2px 8px rgba(26,77,122,0.04);
+      border: 1px solid #e9ecef;
+    }
+    .toc ul {
+      padding-inline-start: 20px;
+      list-style-type: none;
+      margin: 0;
+    }
+    .toc li {
+      margin-bottom: 0.3em;
+    }
+    .toc a {
+      color: #1769aa;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+      border-bottom: 1px dotted #1769aa;
+    }
+    .toc a:hover, .toc a:focus {
+      color: #ff6b35;
+      border-bottom: 1px solid #ff6b35;
+      background: #f8e9e2;
+      border-radius: 3px;
+      outline: none;
+    }
+    /* Powerpal section styles (moved from inline, values unchanged) */
+    .powerpal-form {
+      margin-bottom:1em;
+      display:flex;
+      flex-wrap:wrap;
+      gap:1em;
+      align-items:center;
+    }
+    .powerpal-form label[for="pp-device"] {
+      min-width:90px;
+    }
+    .powerpal-form input#pp-device {
+      flex:1 1 120px;
+      min-width:120px;
+    }
+    .powerpal-form label[for="pp-token"] {
+      min-width:60px;
+    }
+    .powerpal-form input#pp-token {
+      flex:2 1 220px;
+      min-width:180px;
+    }
+    .powerpal-tip {
+      font-size:0.97em;
+      color:#4b5a6a;
+      margin-top:0.7em;
+    }
+    .powerpal-details {
+      margin-top:1em;
+    }
+    .powerpal-details summary {
+      cursor:pointer;
+      font-weight:500;
+    }
+    .powerpal-details ul {
+      margin-top:0.7em;
+    }
     body {
       font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
       background-color: #242424;
@@ -83,6 +150,15 @@
       font-family: monospace;
       font-size: 0.9em;
     }
+    .code-block {
+      display: block;
+      background: #f0f4f8;
+      padding: 0.5rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
     .format-section {
       margin-bottom: 2.5rem;
     }
@@ -118,8 +194,16 @@
   <div class="container">
     <h2>Supported Data File Formats</h2>
     <p>This application supports several energy usage data file formats. Please ensure your file matches one of the formats below before uploading.</p>
+    <nav class="toc">
+      <ul>
+        <li><a href="#nem12">1. NEM12 (Australian National Electricity Market)</a></li>
+        <li><a href="#jemena">2. Jemena / AusNet</a></li>
+        <li><a href="#origin">3. Origin Energy</a></li>
+        <li><a href="#powerpal">4. Powerpal</a></li>
+      </ul>
+    </nav>
 
-    <div class="format-section">
+    <div class="format-section" id="nem12">
       <h3>1. NEM12 (Australian National Electricity Market)</h3>
       <p><strong>Description:</strong> Standard format for interval meter data in Australia. Used by many retailers and distributors.</p>
       <p><strong>Required fields:</strong></p>
@@ -135,8 +219,8 @@
       <p class="note">For more on the NEM12 format, see <a class="source-link" href="https://aemo.com.au/-/media/files/electricity/nem/retail_and_metering/metering-procedures/2017/mdff_specification_nem12_nem13_final_v102.pdf" target="_blank" rel="noopener noreferrer">AEMO NEM12 Specification</a>.</p>
     </div>
 
-    <div class="format-section">
-      <h3>2. Jemena / AusNet CSV</h3>
+    <div class="format-section" id="jemena">
+      <h3>2. Jemena / AusNet</h3>
       <p><strong>Description:</strong> CSV format used by Jemena and AusNet (identical structure). Available from their customer portals.</p>
       <p><strong>Required columns:</strong></p>
       <ul>
@@ -152,8 +236,8 @@
       </ol>
     </div>
 
-    <div class="format-section">
-      <h3>3. Origin Energy CSV</h3>
+    <div class="format-section" id="origin">
+      <h3>3. Origin Energy</h3>
       <p><strong>Description:</strong> Standard CSV export from Origin Energy online account.</p>
       <p><strong>Required columns:</strong></p>
       <ul>
@@ -170,6 +254,92 @@
         <li>Download and save the file</li>
       </ol>
       <p class="note">Note: The system will process consumption data only and ignore other entries.</p>
+    </div>
+
+    <div class="format-section" id="powerpal">
+      <h3>4. Powerpal</h3>
+      <p><strong>Description:</strong> Data export from the Powerpal app, providing minute-by-minute or hour-by-hour electricity usage readings from your smart meter.</p>
+      <p><strong>Required columns:</strong></p>
+      <ul>
+        <li><code>datetime_utc</code> — Date and time of the reading in UTC (e.g. <code>2024-07-27 00:00:00</code>)</li>
+        <li><code>datetime_local</code> — Local date and time of the reading</li>
+        <li><code>watt_hours</code> — Energy used during the interval (in Wh)</li>
+      </ul>
+      <p><strong>How to obtain:</strong></p>
+      <ol>
+        <li>Open the <strong>Powerpal</strong> app on your mobile device</li>
+        <li>Tap the <em>Insights</em> tab at the bottom of the screen and select <em>Export your data</em></li>
+        <li>Choose the date range you wish to export</li>
+        <li>Tap <em>Export my download link</em></li>
+        <li>Send the file to your email or save it to your device</li>
+      </ol>
+      <p class="note">Note: In the Powerpal app there is only the option to export data minute-by-minute or hourly and only allows a maximum of 90 days at a time.</p>
+      <p><strong>How to obtain a full year:</strong></p>
+      <div>
+        <p>Because Powerpal only allows up to 90 days per export, you need to download multiple files to cover a full year. Use the tool below to generate the required <code>curl</code> commands for your device and token and then merge the files into a single file for upload:</p>
+        <form id="powerpal-form" class="powerpal-form">
+          <label for="pp-device" class="powerpal-label-device">Device ID:</label>
+          <input id="pp-device" type="text" placeholder="e.g. abcd1234" class="powerpal-input-device" />
+          <label for="pp-token" class="powerpal-label-token">Token:</label>
+          <input id="pp-token" type="text" placeholder="e.g. eyJhbGciOi..." class="powerpal-input-token" />
+        </form>
+        <pre id="powerpal-curl" class="powerpal-curl"><code class="code-block">Enter your Device ID and Token above</code></pre>
+        <p class="powerpal-tip">Tip: Paste the generated commands above into your terminal to download the CSV files and merge them.</p>
+        <div class="note">
+          <strong>Notes:</strong>
+          <ul>
+            <li>In the Powerpal app there is only the option to export data minute-by-minute or hourly and only allows a maximum of 90 days at a time. However, the <code>curl</code> commands above will download the data in 30 minute intervals.</li>
+            <li>The Powerpal data may not include Controlled Load consumption if the smart meter is not configured to report it. If you have Controlled Load, you may need to manually add that data or check with Powerpal support.</li>
+            <li>The Powerpal API has CORS enabled on their API end-point, so it is not possible for this webapp to obtain the data directly :(</li>
+          </ul>
+        </div>
+        <details class="powerpal-details">
+          <summary>What are Device ID and Token? How do I find them?</summary>
+          <ul>
+            <li><strong>Device ID</strong>: A unique code for your Powerpal device. It appears in the export URL in the app's export screen.</li>
+            <li><strong>Token</strong>: A long string used to authenticate your download. It is included in the export URL generated by the app.</li>
+            <li>To find both, use the Powerpal app's <em>Export your data</em> feature and copy the export URL. The URL will look like:<br>
+              <code>https://readings.powerpal.net/csv/v1/&lt;deviceId&gt;?token=&lt;token&gt;&amp;start=...&amp;end=...</code>
+            </li>
+          </ul>
+        </details>
+        <script>
+        (function() {
+          const MS_PER_DAY = 86400; // seconds in a day
+          const INTERVAL = 90; // days per export
+          const now = new Date();
+          const endTime = Math.floor(now.getTime() / 1000); // now in seconds
+          const startTime = Math.floor(new Date(now.getFullYear()-1, now.getMonth(), now.getDate()).getTime() / 1000);
+          function getRanges(start, end, intervalDays) {
+            const ranges = [];
+            let s = start;
+            while (s < end) {
+              let e = Math.min(s + intervalDays * MS_PER_DAY, end);
+              ranges.push([s, e]);
+              s = e;
+            }
+            return ranges;
+          }
+          function updateCurl() {
+            const device = document.getElementById('pp-device').value.trim();
+            const token = document.getElementById('pp-token').value.trim();
+            const curlPre = document.getElementById('powerpal-curl');
+            if (!device || !token) {
+              curlPre.innerHTML = '<code class="code-block">Enter your Device ID and Token above</code>';
+              return;
+            }
+            const ranges = getRanges(startTime, endTime, INTERVAL);
+            const lines = ranges.map(([s, e], i) =>
+              `curl 'https://readings.powerpal.net/csv/v1/${device}?token=${token}&start=${s}&end=${e}&sample=30' -o powerpal_${i+1}.csv`
+            );
+            const mergeLines = `\n\nhead -n 1 powerpal_1.csv > powerpal.csv\nfor f in powerpal_*.csv; do tail -n +2 "$f"; done >> powerpal.csv`;
+            curlPre.innerHTML = '<code class="code-block">' + lines.join('\n') + mergeLines + '</code>';
+          }
+          document.getElementById('pp-device').addEventListener('input', updateCurl);
+          document.getElementById('pp-token').addEventListener('input', updateCurl);
+        })();
+        </script>
+      </div>
     </div>
 
     <h3>Need help?</h3>

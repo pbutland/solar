@@ -68,7 +68,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'text/csv': ['.csv'] },
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 15 * 1024 * 1024, // 15MB
   });
 
   return (

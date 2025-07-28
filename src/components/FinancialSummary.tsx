@@ -21,16 +21,16 @@ function FinancialSummary({ energyCalculations, installationCost, earnings = fal
   if (
     energyCalculations?.totalConsumption &&
     energyCalculations?.generationSolar &&
-    Array.isArray(energyCalculations.nonSolarConsumptionCost) &&
+    Array.isArray(energyCalculations.originalConsumptionCost) &&
     Array.isArray(energyCalculations.consumptionCost) &&
-    energyCalculations.nonSolarConsumptionCost.length > 0 &&
+    energyCalculations.originalConsumptionCost.length > 0 &&
     energyCalculations.consumptionCost.length > 0
   ) {
-    const totalNonSolar = energyCalculations.nonSolarConsumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+    const totalNonSolar = energyCalculations.originalConsumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
     const totalConsumption = energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
-    console.log('Total Non-Solar Cost:', totalNonSolar);
-    console.log('Total Consumption Cost:', totalConsumption);
     savings = totalNonSolar - totalConsumption;
+  } else if (energyCalculations?.consumptionCost && energyCalculations.consumptionCost.length > 0) {
+    savings = -energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
   }
 
   // Calculate ROI if installationCost and savings are valid numbers

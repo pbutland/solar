@@ -1,6 +1,7 @@
 import { OriginCsvParser } from './OriginCsvParser';
 import { NEM12CsvParser } from './NEM12CsvParser';
 import { JemenaCsvParser } from './JemenaCsvParser';
+import { PowerpalCsvParser } from './PowerpalCsvParser';
 import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
 import { parseISO } from 'date-fns';
 
@@ -13,6 +14,7 @@ const parsers = [
   new OriginCsvParser(),
   new NEM12CsvParser(),
   new JemenaCsvParser(),
+  new PowerpalCsvParser(),
 ];
 
 /**
@@ -65,4 +67,72 @@ export function filterLastYearOfData(data: EnergyPeriodEntry[]): EnergyPeriodEnt
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return rearranged;
+}
+
+/**
+ * Aggregates or splits an array of EnergyPeriodEntry to the specified periodInMinutes.
+ * If periodInMinutes is greater than the raw interval, values are summed into larger blocks.
+ * If periodInMinutes is less than the raw interval, values are distributed evenly across smaller blocks.
+ * Assumes no gaps in the data.
+ */
+export function aggregateToInterval(
+  entries: EnergyPeriodEntry[],
+  periodInMinutes: number
+): EnergyPeriodEntry[] {
+  if (!entries.length) return [];
+  // Sort entries by date ascending
+  const sorted = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Determine raw interval in ms
+  const getMs = (d: string) => new Date(d).getTime();
+  const rawIntervalMs = sorted.length > 1 ? getMs(sorted[1].date) - getMs(sorted[0].date) : periodInMinutes * 60 * 1000;
+  const targetIntervalMs = periodInMinutes * 60 * 1000;
+
+  if (rawIntervalMs === targetIntervalMs) {
+    // No change needed
+    return sorted;
+  } else if (rawIntervalMs < targetIntervalMs) {
+    // Aggregate up: sum values into targetIntervalMs blocks
+    const result: EnergyPeriodEntry[] = [];
+    let blockStart = getMs(sorted[0].date) - (getMs(sorted[0].date) % targetIntervalMs);
+    let blockSum = 0;
+    let blockCount = 0;
+    for (const entry of sorted) {
+      const entryMs = getMs(entry.date);
+      const entryBlockStart = entryMs - (entryMs % targetIntervalMs);
+      if (entryBlockStart !== blockStart && blockCount > 0) {
+        result.push({
+          date: new Date(blockStart).toISOString().slice(0, 16),
+          value: blockSum,
+        });
+        blockStart = entryBlockStart;
+        blockSum = 0;
+        blockCount = 0;
+      }
+      blockSum += entry.value;
+      blockCount++;
+    }
+    // Push last block
+    if (blockCount > 0) {
+      result.push({
+        date: new Date(blockStart).toISOString().slice(0, 16),
+        value: blockSum,
+      });
+    }
+    return result;
+  } else {
+    // Split down: distribute value evenly across smaller intervals
+    const result: EnergyPeriodEntry[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+      const entry = sorted[i];
+      const entryMs = getMs(entry.date);
+      const nextMs = i + 1 < sorted.length ? getMs(sorted[i + 1].date) : entryMs + rawIntervalMs;
+      const nBlocks = Math.round((nextMs - entryMs) / targetIntervalMs);
+      const valuePerBlock = entry.value / nBlocks;
+      for (let b = 0; b < nBlocks; b++) {
+        const blockDate = new Date(entryMs + b * targetIntervalMs).toISOString().slice(0, 16);
+        result.push({ date: blockDate, value: valuePerBlock });
+      }
+    }
+    return result;
+  }
 }

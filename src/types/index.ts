@@ -26,7 +26,7 @@ export interface EnergyCalculations {
   consumptionBattery?: EnergyPeriodEntry[];
   totalConsumption?: EnergyPeriodEntry[];
   consumptionCost?: number[];
-  nonSolarConsumptionCost?: number[];
+  originalConsumptionCost?: number[];
 }
 
 export interface EnergySystemDetails {

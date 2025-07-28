@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { filterLastYearOfData } from './csvProcessor';
+import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
 
 // Jemena CSV parser implementation
 export class JemenaCsvParser implements EnergyCsvParser {
@@ -36,11 +36,12 @@ export class JemenaCsvParser implements EnergyCsvParser {
       }
     }
 
-    const values = Object.entries(aggregate).map(([date, value]) => ({ date, value }));
+    const rawValues = Object.entries(aggregate).map(([date, value]) => ({ date, value }));
+    const processedData = aggregateToInterval(rawValues, periodInMinutes);
 
     return {
       periodInMinutes,
-      values: filterLastYearOfData(values)
+      values: filterLastYearOfData(processedData)
     };
   }
 }

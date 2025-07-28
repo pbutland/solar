@@ -1,6 +1,9 @@
 import { solarSystemConstants } from '../config/solarConstants.js';
 import type { EnergyCalculations, EnergySystemDetails } from '../types/index.js';
 
+const PEAK_START_HOUR = 15; // 3 PM
+const PEAK_END_HOUR = 21; // 9 PM
+
 /**
  * Solar calculation utilities for the solar energy application
  * These functions handle the core solar energy calculations
@@ -27,10 +30,6 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
     console.log('Energy calculations and system details are required');
     return energyCalculations;
   }
-  if (!energyCalculations.generationSolar || !energyCalculations.totalConsumption) {
-    console.log('generationSolar and totalConsumption arrays are required');
-    return energyCalculations;
-  }
 
   const {
     batteryCapacity = 0,
@@ -38,73 +37,91 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
     offPeakCost,
     feedInTariff
   } = systemDetails;
-  let batteryLevel = 0; // in kWh
+  let batteryLevel = batteryCapacity; // in kWh
 
   energyCalculations.exportedSolar = [];
   energyCalculations.consumptionGrid = [];
   energyCalculations.consumptionSolar = [];
   energyCalculations.consumptionBattery = [];
   energyCalculations.consumptionCost = [];
-  energyCalculations.nonSolarConsumptionCost = [];
+  energyCalculations.originalConsumptionCost = [];
 
-  for (let i = 0; i < energyCalculations.totalConsumption.length; i++) {
-    const consumptionEntry = energyCalculations.totalConsumption[i];
-    const solarEntry = energyCalculations.generationSolar[i];
-    const date = consumptionEntry.date;
-    let consumption = consumptionEntry.value; // kWh
-    let solar = solarEntry ? solarEntry.value : 0; // kWh
+  if (energyCalculations.generationSolar && 
+    energyCalculations.generationSolar.length > 0 &&
+    energyCalculations.totalConsumption &&
+    energyCalculations.totalConsumption.length > 0) {
+    for (let i = 0; i < energyCalculations.totalConsumption.length; i++) {
+      const consumptionEntry = energyCalculations.totalConsumption[i];
+      const solarEntry = energyCalculations.generationSolar[i];
+      const date = consumptionEntry.date;
+      let consumption = consumptionEntry.value; // kWh
+      let solar = solarEntry ? solarEntry.value : 0; // kWh
 
-    // 1. Use solar to meet consumption
-    const usedSolar = Math.min(consumption, solar);
-    energyCalculations.consumptionSolar.push({ date, value: usedSolar });
-    consumption -= usedSolar;
-    solar -= usedSolar;
+      // 1. Use solar to meet consumption
+      const usedSolar = Math.min(consumption, solar);
+      energyCalculations.consumptionSolar.push({ date, value: usedSolar });
+      consumption -= usedSolar;
+      solar -= usedSolar;
 
-    // 2. Use battery to meet remaining consumption
-    let usedBattery = 0;
-    if (batteryCapacity > 0 && consumption > 0 && batteryLevel > 0) {
-      usedBattery = Math.min(consumption, batteryLevel);
-      batteryLevel -= usedBattery;
-      consumption -= usedBattery;
+      // 2. Use battery to meet remaining consumption
+      let usedBattery = 0;
+      if (batteryCapacity > 0 && consumption > 0 && batteryLevel > 0) {
+        usedBattery = Math.min(consumption, batteryLevel);
+        batteryLevel -= usedBattery;
+        consumption -= usedBattery;
+      }
+      energyCalculations.consumptionBattery.push({ date, value: usedBattery });
+
+      // 3. Use grid for any remaining consumption
+      let usedGrid = 0;
+      if (consumption > 0) {
+        usedGrid = consumption;
+        consumption = 0;
+      }
+      energyCalculations.consumptionGrid.push({ date, value: usedGrid });
+
+      // 4. Use excess solar to charge battery (up to capacity)
+      let chargedToBattery = 0;
+      if (batteryCapacity > 0 && solar > 0 && batteryLevel < batteryCapacity) {
+        chargedToBattery = Math.min(solar, batteryCapacity - batteryLevel);
+        batteryLevel += chargedToBattery;
+        solar -= chargedToBattery;
+      }
+
+      // 5. If excess solar remains after battery is full, export solar to grid
+      energyCalculations.exportedSolar.push({ date, value: solar });
+
+      // 6. Cost/rebate calculation
+      // Determine if this period is peak (2pm-8pm local time)
+      const hour = new Date(date).getHours();
+      const isPeak = hour >= PEAK_START_HOUR && hour < PEAK_END_HOUR;
+      const rate = (isPeak ? peakCost : (offPeakCost || peakCost));
+      if (rate === null || rate === undefined) {
+        continue;
+      }
+      let cost = 0;
+      // Only pay for positive grid import
+      if (energyCalculations.consumptionGrid[i].value > 0) {
+        cost += energyCalculations.consumptionGrid[i].value * rate;
+      }
+      // Rebate for export
+      if (feedInTariff && energyCalculations.exportedSolar[i].value > 0) {
+        cost -= energyCalculations.exportedSolar[i].value * feedInTariff;
+      }
+      energyCalculations.consumptionCost.push(cost);
+      energyCalculations.originalConsumptionCost.push(energyCalculations.totalConsumption[i].value * rate);
     }
-    energyCalculations.consumptionBattery.push({ date, value: usedBattery });
-
-    // 3. Use grid for any remaining consumption
-    let usedGrid = 0;
-    if (consumption > 0) {
-      usedGrid = consumption;
-      consumption = 0;
+  } else if (energyCalculations.generationSolar && energyCalculations.generationSolar.length > 0) {
+    for (let i = 0; i < energyCalculations.generationSolar.length; i++) {
+      const solarEntry = energyCalculations.generationSolar[i];
+      const date = solarEntry.date;
+      energyCalculations.exportedSolar.push({ date, value: solarEntry.value });
+      if (feedInTariff && energyCalculations.exportedSolar[i].value > 0) {
+        const cost = -energyCalculations.exportedSolar[i].value * feedInTariff;
+        energyCalculations.consumptionCost.push(cost);
+      }
     }
-    energyCalculations.consumptionGrid.push({ date, value: usedGrid });
-
-    // 4. Use excess solar to charge battery (up to capacity)
-    let chargedToBattery = 0;
-    if (batteryCapacity > 0 && solar > 0 && batteryLevel < batteryCapacity) {
-      chargedToBattery = Math.min(solar, batteryCapacity - batteryLevel);
-      batteryLevel += chargedToBattery;
-      solar -= chargedToBattery;
-    }
-
-    // 5. If excess solar remains after battery is full, export solar to grid
-    energyCalculations.exportedSolar.push({ date, value: solar });
-
-    // 6. Cost/rebate calculation
-    // Determine if this period is peak (2pm-8pm local time)
-    const hour = new Date(date).getHours();
-    const isPeak = hour >= 14 && hour < 20;
-    const rate = (isPeak ? peakCost : (offPeakCost || peakCost)) || 0;
-    let cost = 0;
-    // Only pay for positive grid import
-    if (energyCalculations.consumptionGrid[i].value > 0) {
-      cost += energyCalculations.consumptionGrid[i].value * rate;
-    }
-    // Rebate for export
-    if (feedInTariff && energyCalculations.exportedSolar[i].value > 0) {
-      cost -= energyCalculations.exportedSolar[i].value * feedInTariff;
-    }
-    energyCalculations.consumptionCost.push(cost);
-    energyCalculations.nonSolarConsumptionCost.push(energyCalculations.totalConsumption[i].value * rate);
   }
-
+  
   return energyCalculations;
 }

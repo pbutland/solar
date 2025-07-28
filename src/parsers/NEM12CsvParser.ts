@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { filterLastYearOfData } from './csvProcessor';
+import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
 
 // NEM12 parser implementation
 // Reference: https://aemo.com.au/-/media/files/electricity/nem/retail_and_metering/market-settlements-and-transfer-solution-nem12-nem13-file-format-specification.pdf
@@ -19,7 +19,7 @@ export class NEM12CsvParser implements EnergyCsvParser {
     // NEM12 structure: 100 (file header), 200 (meter), 300 (intervals), 900 (footer)
     let currentDate = '';
     let currentIntervalLength = periodInMinutes;
-    const values: { date: string; value: number }[] = [];
+    const rawValues: { date: string; value: number }[] = [];
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -43,16 +43,18 @@ export class NEM12CsvParser implements EnergyCsvParser {
             const hour = Math.floor(minutes / 60).toString().padStart(2, '0');
             const minute = (minutes % 60).toString().padStart(2, '0');
             const iso = `${year}-${month}-${day}T${hour}:${minute}`;
-            values.push({ date: iso, value: val });
+            rawValues.push({ date: iso, value: val });
           }
         }
       }
     }
 
-    values.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    rawValues.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const processedData = aggregateToInterval(rawValues, periodInMinutes);
+    
     return {
       periodInMinutes: currentIntervalLength,
-      values: filterLastYearOfData(values)
+      values: filterLastYearOfData(processedData)
     };
   }
 }
