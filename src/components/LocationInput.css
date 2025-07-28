@@ -55,3 +55,9 @@
 .latlong-section input:invalid {
   border-color: #f44336;
 }
+
+@media (max-width: 768px) {
+  .latlong-section {
+    gap: 0.5rem;
+  }
+}

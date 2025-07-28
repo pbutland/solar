@@ -10,6 +10,7 @@
 @media (max-width: 768px) {
   .help-section {
     padding: 1rem;
+    margin-top: 1.5rem;
   }
 }
 

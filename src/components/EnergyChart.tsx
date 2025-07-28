@@ -16,6 +16,8 @@ import './EnergyChart.css';
 interface EnergyChartProps {
   energyCalculations: EnergyCalculations | null;
   timePeriod?: TimePeriod;
+  chartExpanded?: boolean;
+  onToggleChartExpanded?: () => void;
 }
 
 interface ChartDataPoint {
@@ -35,7 +37,12 @@ interface ChartDataPoint {
  */
 
 
-const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePeriod = 'month' }) => {
+const EnergyChart: React.FC<EnergyChartProps> = ({ 
+  energyCalculations, 
+  timePeriod = 'month', 
+  chartExpanded = false, 
+  onToggleChartExpanded 
+}) => {
   const [localTimePeriod, setLocalTimePeriod] = React.useState<TimePeriod>(timePeriod);
   const hasConsumptionData = Array.isArray(energyCalculations?.totalConsumption) && energyCalculations.totalConsumption.length > 0;
   const hasSolarData = Array.isArray(energyCalculations?.generationSolar) && energyCalculations.generationSolar.length > 0;
@@ -179,7 +186,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePerio
   return (
     <div className="energy-chart-container">
       <div className="chart-header chart-header-rel">
-        <h2 className="chart-title-inline">Monthly Energy Flows</h2>
+        <h2 className="chart-title-inline">Energy Flows</h2>
         <select
           value={localTimePeriod}
           onChange={e => setLocalTimePeriod(e.target.value as TimePeriod)}
@@ -190,6 +197,16 @@ const EnergyChart: React.FC<EnergyChartProps> = ({ energyCalculations, timePerio
           <option value="week">Weekly</option>
           <option value="month">Monthly</option>
         </select>
+        {onToggleChartExpanded && (
+          <button
+            onClick={onToggleChartExpanded}
+            className="chart-expand-button"
+            aria-label={chartExpanded ? "Hide controls" : "Show controls"}
+            title={chartExpanded ? "Hide controls" : "Show controls"}
+          >
+            {chartExpanded ? '–' : '⛶'}
+          </button>
+        )}
         <div className="chart-summary">
           {hasDailyGeneration && (
             <div className="summary-item">

@@ -18,6 +18,7 @@ function App() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false)
   const [solarError, setSolarError] = useState<string | null>(null)
+  const [chartExpanded, setChartExpanded] = useState(false)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
   const [isLoadingSolar, setIsLoadingSolar] = useState<boolean>(false)
   const [energyCalculations, setEnergyCalculations] = useState<EnergyCalculations | null>(null)
@@ -230,15 +231,19 @@ function App() {
         </div>
       ) : (
         <main>
-          <InstallationControls 
-            installationSize={installationSize}
-            batteryCapacity={batteryCapacity}
-            onInstallationSizeChange={setInstallationSize}
-            onBatteryCapacityChange={setBatteryCapacity}
-          />
+          {!chartExpanded && (
+            <InstallationControls 
+              installationSize={installationSize}
+              batteryCapacity={batteryCapacity}
+              onInstallationSizeChange={setInstallationSize}
+              onBatteryCapacityChange={setBatteryCapacity}
+            />
+          )}
           <div className="chart-section">
             <EnergyChart 
               energyCalculations={energyCalculations}
+              chartExpanded={chartExpanded}
+              onToggleChartExpanded={() => setChartExpanded(!chartExpanded)}
             />
           </div>
         </main>
