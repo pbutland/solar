@@ -102,9 +102,9 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
       hasSolarData
     );
   } else if (effectiveTimePeriod === 'week' && aggregated) {
-    const numWeeks = Array.isArray(aggregated.totalConsumption)
+    const numWeeks = Array.isArray(aggregated.totalConsumption) && aggregated.totalConsumption.length > 0
       ? aggregated.totalConsumption.length
-      : (Array.isArray(aggregated.generationSolar) ? aggregated.generationSolar.length : 52);
+      : (Array.isArray(aggregated.generationSolar) && aggregated.generationSolar.length > 0 ? aggregated.generationSolar.length : 52);
     chartData = makeChartData(
       aggregated,
       numWeeks,
@@ -115,9 +115,9 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
       i => `Week ${i + 1}`
     );
   } else if (effectiveTimePeriod === 'day' && aggregated) {
-    const numDays = Array.isArray(aggregated.totalConsumption)
+    const numDays = Array.isArray(aggregated.totalConsumption) && aggregated.totalConsumption.length > 0
       ? aggregated.totalConsumption.length
-      : (Array.isArray(aggregated.generationSolar) ? aggregated.generationSolar.length : 365);
+      : (Array.isArray(aggregated.generationSolar) && aggregated.generationSolar.length > 0 ? aggregated.generationSolar.length : 365);
     chartData = makeChartData(
       aggregated,
       numDays,
