@@ -35,7 +35,8 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
     batteryCapacity = 0,
     peakCost,
     offPeakCost,
-    feedInTariff
+    feedInTariff,
+    exportLimit
   } = systemDetails;
   let batteryLevel = batteryCapacity; // in kWh
 
@@ -45,7 +46,10 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
   energyCalculations.consumptionBattery = [];
   energyCalculations.consumptionCost = [];
   energyCalculations.originalConsumptionCost = [];
+  energyCalculations.unusedSolar = [];
 
+  let dailyExported = 0;
+  let currentDay = null;
   if (energyCalculations.generationSolar && 
     energyCalculations.generationSolar.length > 0 &&
     energyCalculations.totalConsumption &&
@@ -89,33 +93,50 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
       }
 
       // 5. If excess solar remains after battery is full, export solar to grid
-      energyCalculations.exportedSolar.push({ date, value: solar });
+      // Use exportLimit to cap exportedSolar, add excess to unusedSolar
+      const dayString = new Date(date).toISOString().slice(0, 10);
+      if (currentDay !== dayString) {
+        currentDay = dayString;
+        dailyExported = 0;
+      }
+      const { exported, unused } = calculateExportedAndUnusedSolar(solar, exportLimit, dailyExported);
+      dailyExported += exported;
+      energyCalculations.exportedSolar.push({ date, value: exported });
+      energyCalculations.unusedSolar.push({ date, value: unused });
 
       // 6. Cost/rebate calculation
       // Determine if this period is peak (2pm-8pm local time)
       const hour = new Date(date).getHours();
       const isPeak = hour >= PEAK_START_HOUR && hour < PEAK_END_HOUR;
       const rate = (isPeak ? peakCost : (offPeakCost || peakCost));
-      if (rate === null || rate === undefined) {
-        continue;
-      }
+
       let cost = 0;
       // Only pay for positive grid import
-      if (energyCalculations.consumptionGrid[i].value > 0) {
+      if (rate &&energyCalculations.consumptionGrid[i].value > 0) {
         cost += energyCalculations.consumptionGrid[i].value * rate;
       }
       // Rebate for export
-      if (feedInTariff && energyCalculations.exportedSolar[i].value > 0) {
-        cost -= energyCalculations.exportedSolar[i].value * feedInTariff;
+      if (feedInTariff && exported > 0) {
+        cost -= exported/*energyCalculations.exportedSolar[i].value*/ * feedInTariff;
       }
       energyCalculations.consumptionCost.push(cost);
-      energyCalculations.originalConsumptionCost.push(energyCalculations.totalConsumption[i].value * rate);
+      energyCalculations.originalConsumptionCost.push(rate ? energyCalculations.totalConsumption[i].value * rate : 0);
     }
   } else if (energyCalculations.generationSolar && energyCalculations.generationSolar.length > 0) {
     for (let i = 0; i < energyCalculations.generationSolar.length; i++) {
       const solarEntry = energyCalculations.generationSolar[i];
       const date = solarEntry.date;
-      energyCalculations.exportedSolar.push({ date, value: solarEntry.value });
+
+      // Use exportLimit to cap exportedSolar, add excess to unusedSolar
+      const dayString = new Date(date).toISOString().slice(0, 10);
+      if (currentDay !== dayString) {
+        currentDay = dayString;
+        dailyExported = 0;
+      }
+      const { exported, unused } = calculateExportedAndUnusedSolar(solarEntry.value, exportLimit, dailyExported);
+      dailyExported += exported;
+      energyCalculations.exportedSolar.push({ date, value: exported });
+      energyCalculations.unusedSolar.push({ date, value: unused });
       if (feedInTariff && energyCalculations.exportedSolar[i].value > 0) {
         const cost = -energyCalculations.exportedSolar[i].value * feedInTariff;
         energyCalculations.consumptionCost.push(cost);
@@ -124,4 +145,17 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
   }
   
   return energyCalculations;
+}
+
+// Helper function for daily export/unused solar calculation
+function calculateExportedAndUnusedSolar(solar: number, exportLimit: number | undefined | null, dailyExported: number): { exported: number; unused: number } {
+  if (exportLimit === undefined || exportLimit === null) {
+    return { exported: solar, unused: 0 };
+  }
+  if (dailyExported < exportLimit) {
+    const exportable = Math.min(solar, exportLimit - dailyExported);
+    return { exported: exportable, unused: solar - exportable };
+  } else {
+    return { exported: 0, unused: solar };
+  }
 }

@@ -27,6 +27,7 @@ interface ChartDataPoint {
   consumptionSolar?: number;
   consumptionBattery?: number;
   exportedSolar?: number;
+  unusedSolar?: number;
   totalConsumption?: number;
   generationSolar?: number;
 }
@@ -60,6 +61,11 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
 
   const effectiveTimePeriod = localTimePeriod;
   const aggregated = energyCalculations ? aggregateEnergyCalculationsToPeriod(energyCalculations, effectiveTimePeriod) : null;
+
+  // Always aggregate daily values for surplus/deficit calculation
+  const dailyAggregated = energyCalculations
+    ? aggregateEnergyCalculationsToPeriod(energyCalculations, 'day')
+    : null;
   // Helper to generate chart data for any period
   function makeChartData(
     aggregated: any,
@@ -82,6 +88,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
         dataPoint.consumptionSolar = Math.round((aggregated.consumptionSolar?.[i]?.value || 0) * 100) / 100;
         dataPoint.consumptionBattery = Math.round((aggregated.consumptionBattery?.[i]?.value || 0) * 100) / 100;
         dataPoint.exportedSolar = Math.round((aggregated.exportedSolar?.[i]?.value || 0) * 100) / 100;
+        dataPoint.unusedSolar = Math.round((aggregated.unusedSolar?.[i]?.value || 0) * 100) / 100;
         // Always set totalConsumption if available
         if (aggregated.totalConsumption) {
           dataPoint.totalConsumption = Math.round((aggregated.totalConsumption[i]?.value || 0) * 100) / 100;
@@ -157,6 +164,9 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
           {typeof data.exportedSolar === 'number' && (
             <p className="tooltip-consumption"><span style={{ color: '#ff7300' }}>●</span>&nbsp;Exported: {data.exportedSolar} kWh</p>
           )}
+          {typeof data.unusedSolar === 'number' && (
+            <p className="tooltip-consumption"><span style={{ color: '#A9A9A9' }}>●</span>&nbsp;Unused Solar: {data.unusedSolar} kWh</p>
+          )}
           {typeof data.totalConsumption === 'number' && (
             <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Consumption: {data.totalConsumption} kWh</p>
           )}
@@ -169,9 +179,9 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
     return null;
   };
 
-  // --- Summary stats logic (using aggregated daily values) ---
-  const dailyGeneration = Array.isArray(aggregated?.generationSolar) ? aggregated.generationSolar : [];
-  const dailyConsumption = Array.isArray(aggregated?.totalConsumption) ? aggregated.totalConsumption : [];
+  // --- Summary stats logic (using daily aggregated values only) ---
+  const dailyGeneration = Array.isArray(dailyAggregated?.generationSolar) ? dailyAggregated.generationSolar : [];
+  const dailyConsumption = Array.isArray(dailyAggregated?.totalConsumption) ? dailyAggregated.totalConsumption : [];
   const hasDailyGeneration = dailyGeneration.length > 0;
   const hasDailyConsumption = dailyConsumption.length > 0;
   const totalGeneration = hasDailyGeneration ? dailyGeneration.reduce((sum, e) => sum + (e.value || 0), 0) : 0;
@@ -270,7 +280,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
             />
             <YAxis label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} tick={{ fontSize: 12 }} axisLine={{ stroke: '#ccc' }} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: '10px' }} />
+            <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: '10px' }} />
             {/* Stacked bars for all flows if both data sets exist */}
             {hasStacked && (
               <>
@@ -278,6 +288,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
                 <Bar dataKey="consumptionSolar" stackId="a" fill="#82ca9d" name="Solar Used" />
                 <Bar dataKey="consumptionBattery" stackId="a" fill="#FFD700" name="Battery Consumption" />
                 <Bar dataKey="exportedSolar" stackId="a" fill="#ff7300" name="Exported Solar" />
+                <Bar dataKey="unusedSolar" stackId="a" fill="#A9A9A9" name="Unused Solar" />
               </>
             )}
             {/* Only total consumption as bar (when not stacked) */}

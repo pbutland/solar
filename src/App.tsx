@@ -30,6 +30,7 @@ function App() {
     peakCost: null as number | null,
     offPeakCost: null as number | null,
     feedInTariff: null as number | null,
+    exportLimit: 5 as number | null,
   });
 
   // Update energyCalculations with both solar and consumption calculations together
@@ -54,6 +55,7 @@ function App() {
         peakCost: costDetails.peakCost,
         offPeakCost: costDetails.offPeakCost,
         feedInTariff: costDetails.feedInTariff,
+        exportLimit: costDetails.exportLimit,
       };
       setEnergyCalculations(calculateConsumptionData(base, systemDetails));
     }
@@ -64,6 +66,7 @@ function App() {
     costDetails.peakCost,
     costDetails.offPeakCost,
     costDetails.feedInTariff,
+    costDetails.exportLimit,
   ]);
 
   const validateCoordinates = (latitude: number | null, longitude: number | null): boolean => {
@@ -158,6 +161,7 @@ function App() {
           peakCost: costDetails.peakCost,
           offPeakCost: costDetails.offPeakCost,
           feedInTariff: costDetails.feedInTariff,
+          exportLimit: costDetails.exportLimit,
         };
         setEnergyCalculations(calculateConsumptionData(base, systemDetails));
       }
@@ -180,12 +184,20 @@ function App() {
     setUploadSuccess(false)
   }
 
-  const handleCostChange = (solarCost: number | null, batteryCost: number | null, peak: number | null, offPeak: number | null, feedInTariff: number | null) => {
+  const handleCostChange = (
+    solarCost: number | null,
+    batteryCost: number | null,
+    peak: number | null,
+    offPeak: number | null,
+    feedInTariff: number | null,
+    exportLimit: number | null
+  ) => {
     setCostDetails({
       installationCost: (solarCost || 0) * installationSize + (batteryCost || 0) * batteryCapacity,
       peakCost: peak,
       offPeakCost: offPeak,
       feedInTariff: feedInTariff,
+      exportLimit: exportLimit,
     });
   }
 

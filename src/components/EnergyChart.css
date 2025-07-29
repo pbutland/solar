@@ -282,10 +282,6 @@
   font-family: inherit;
 }
 
-.recharts-legend-wrapper {
-  padding-bottom: 10px;
-}
-
 /* Only override legend text color, not the icons */
 .recharts-legend-wrapper .recharts-legend-item-text {
   color: #333 !important;

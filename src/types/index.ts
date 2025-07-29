@@ -21,6 +21,7 @@ export interface EnergyCalculations {
   periodInMinutes?: number;
   generationSolar?: EnergyPeriodEntry[];
   exportedSolar?: EnergyPeriodEntry[];
+  unusedSolar?: EnergyPeriodEntry[];
   consumptionGrid?: EnergyPeriodEntry[];
   consumptionSolar?: EnergyPeriodEntry[];
   consumptionBattery?: EnergyPeriodEntry[];
@@ -36,6 +37,7 @@ export interface EnergySystemDetails {
   peakCost?: number | null;
   offPeakCost?: number | null;
   feedInTariff?: number | null;
+  exportLimit?: number | null;
 }
 
 export interface FinancialSummary {
