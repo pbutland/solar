@@ -18,7 +18,6 @@ interface CostInputsProps {
 function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInputsProps) {
   const [solarCost, setSolarCost] = useState<string>('1000')
   const [batteryCost, setBatteryCost] = useState<string>('1000')
-  // Store cents in UI, but convert to dollars for logic
   const [peakCost, setPeakCost] = useState<string>('')
   const [offPeakCost, setOffPeakCost] = useState<string>('')
   const [feedInTariff, setFeedInTariff] = useState<string>('')
@@ -28,7 +27,6 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
   useEffect(() => {
     setSolarCost('1000')
     setBatteryCost('1000')
-    setExportLimit('5')
     if (onCostChange) {
       const solarValue = solarCost === '' ? null : parseFloat(solarCost)
       const batteryValue = batteryCost === '' ? null : parseFloat(batteryCost)

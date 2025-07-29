@@ -26,7 +26,8 @@ function App() {
 
   // Financial state (grouped)
   const [costDetails, setCostDetails] = useState({
-    installationCost: null as number | null,
+    solarInstallationCost: null as number | null,
+    batteryInstallationCost: null as number | null,
     peakCost: null as number | null,
     offPeakCost: null as number | null,
     feedInTariff: null as number | null,
@@ -193,7 +194,8 @@ function App() {
     exportLimit: number | null
   ) => {
     setCostDetails({
-      installationCost: (solarCost || 0) * installationSize + (batteryCost || 0) * batteryCapacity,
+      solarInstallationCost: (solarCost || 0) * installationSize,
+      batteryInstallationCost: (batteryCost || 0) * batteryCapacity,
       peakCost: peak,
       offPeakCost: offPeak,
       feedInTariff: feedInTariff,
@@ -265,7 +267,8 @@ function App() {
           <CostInputs installationSize={installationSize} batteryCapacity={batteryCapacity} onCostChange={handleCostChange} />
           <FinancialSummary
             energyCalculations={energyCalculations}
-            installationCost={costDetails.installationCost}
+            solarInstallationCost={costDetails.solarInstallationCost}
+            batteryInstallationCost={costDetails.batteryInstallationCost}
             earnings={costDetails.peakCost === null && costDetails.feedInTariff !== null}
           />
         </div>

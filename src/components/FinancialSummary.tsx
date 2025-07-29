@@ -4,17 +4,23 @@ import './FinancialSummary.css'
 
 interface FinancialSummaryProps {
   energyCalculations?: EnergyCalculations | null
-  installationCost?: number | null
+  solarInstallationCost?: number | null
+  batteryInstallationCost?: number | null
   earnings?: boolean
 }
 
-function FinancialSummary({ energyCalculations, installationCost, earnings = false }: FinancialSummaryProps) {
+function FinancialSummary({ energyCalculations, solarInstallationCost, batteryInstallationCost, earnings = false }: FinancialSummaryProps) {
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) {
       return '--'
     }
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
+
+  // --- Hardcoded constants ---
+  const DISCOUNT_RATE = 0.05;
+  const SOLAR_LIFESPAN = 24; // years
+  const BATTERY_LIFESPAN = 12; // years
 
   // Calculate savings only if both totalConsumption and generationSolar exist
   let savings: number | undefined = undefined;
@@ -33,6 +39,33 @@ function FinancialSummary({ energyCalculations, installationCost, earnings = fal
     savings = -energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
   }
 
+  const installationCost = (solarInstallationCost || 0) + (batteryInstallationCost || 0);
+
+  // --- NPV Calculation ---
+  let npv: number | undefined = undefined;
+  if (typeof savings === 'number' && savings > 0) {
+    npv = 0;
+    // Deduct solar installation cost at year 0 if present
+    if (typeof solarInstallationCost === 'number' && solarInstallationCost > 0) {
+      npv -= solarInstallationCost;
+    }
+    // Deduct battery installation cost at year 0 if present
+    if (typeof batteryInstallationCost === 'number' && batteryInstallationCost > 0) {
+      npv -= batteryInstallationCost;
+    }
+    // Add savings for years 1-12 (battery lifespan)
+    for (let i = 1; i <= Math.min(BATTERY_LIFESPAN, SOLAR_LIFESPAN); i++) {
+      npv += savings / Math.pow(1 + DISCOUNT_RATE, i);
+    }
+    // If battery is present, deduct replacement cost at year 12
+    if (typeof batteryInstallationCost === 'number' && batteryInstallationCost > 0) {
+      npv += -batteryInstallationCost / Math.pow(1 + DISCOUNT_RATE, BATTERY_LIFESPAN);
+    }
+    // Add savings for years after battery lifespan up to solar lifespan
+    for (let i = BATTERY_LIFESPAN + 1; i <= SOLAR_LIFESPAN; i++) {
+      npv += savings / Math.pow(1 + DISCOUNT_RATE, i);
+    }
+  }
   // Calculate ROI if installationCost and savings are valid numbers
   let roiYears: number | undefined = undefined;
   let roiPercent: number | undefined = undefined;
@@ -70,6 +103,10 @@ function FinancialSummary({ energyCalculations, installationCost, earnings = fal
           <label>ROI:</label>
           <span className="value">{formatROI(roiYears, roiPercent)}</span>
         </div>
+        {/* <div className="summary-item">
+          <label>NPV (24 years):</label>
+          <span className="value">{npv === undefined ? '--' : formatCurrency(npv)}</span>
+        </div> */}
       </div>
     </div>
   )

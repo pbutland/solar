@@ -43,7 +43,7 @@ const HelpSection: React.FC = () => {
                 <li>Estimating financial outcomes based on your electricity rates and solar feed-in tariffs</li>
               </ul>
               <p>
-                To get started, select your location on the map and upload your energy usage data from Origin.
+                To get started, enter your location details and upload your energy usage data from your distributor or retailer.
                 Then adjust the installation size and battery capacity to see how different system configurations would perform.
                 Enter your electricity rates and feed-in tariff in the <strong>Cost Configuration</strong> section to see a financial summary tailored to your situation.
               </p>
@@ -62,17 +62,17 @@ const HelpSection: React.FC = () => {
           {expandedSections.dataUpload && (
             <div className="help-content">
               <p>
-                <strong>Important:</strong> The file upload now supports multiple data formats:
+                The file upload supports the following data formats:
               </p>
               <ul>
-                <li>Origin Energy CSV (original format)</li>
+                <li>AusNet</li>
+                <li>Jemena</li>
                 <li>NEM12 (Australian National Electricity Market standard)</li>
-                <li>Jemena CSV (also used by AusNet)</li>
+                <li>Origin Energy</li>
+                <li>Powerpal</li>
               </ul>
               <p>
-                For a detailed description of each supported file format, including required columns, see:
-                <br />
-                <a href="/solar/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats &amp; Examples</a>
+                For a detailed description of each supported file format, including required columns, see: <a href="/solar/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats</a>
               </p>
               <p>
                 <em>Note: The system will process consumption data only and ignore other entries.</em>
@@ -109,6 +109,11 @@ const HelpSection: React.FC = () => {
                 Data is collected for a full 365-day period to account for seasonal variations throughout the year.
                 The solar data is crucial for accurately estimating how much electricity your solar panels could generate.
               </p>
+              <p>
+                <strong>How is daily solar irradiance used?</strong><br />
+                For each day, the total solar irradiance value is distributed across the hours between sunrise and sunset using a normal (Gaussian) distribution.
+                The distribution is centered at solar noon (the midpoint between sunrise and sunset), with most energy allocated during midday and less at the edges of daylight.
+              </p>
             </div>
           )}
         </div>
@@ -129,25 +134,14 @@ const HelpSection: React.FC = () => {
               </p>
               <ul>
                 <li>Sorts all entries chronologically</li>
-                <li>Takes the most recent 365 days of data (or all available data if less than a year)</li>
-                <li>Wraps the data to create a complete 365-day year</li>
+                <li>Takes the most recent 365 days of data</li>
+                <li>Wraps the data to create a complete 365-day year starting from January 1st</li>
               </ul>
               
               <h4>Data Wrapping Explained</h4>
               <p>
                 "Data wrapping" means organizing your energy usage by calendar day (month-day) regardless of year.
-                This creates a standardized year of energy usage data even if:
-              </p>
-              <ul>
-                <li>Your data covers less than a complete year</li>
-                <li>Your data has gaps or missing days</li>
-                <li>Your data spans multiple years</li>
-              </ul>
-              <p>
-                The application creates a 365-day calendar starting from January 1st and maps your actual usage 
-                to the corresponding day of the year. If multiple entries exist for the same calendar day 
-                (e.g., January 15th from different years), it takes the average.
-                If data is missing for certain days, those days will show as zero consumption.
+                This creates a standardized year of energy usage data starting from January 1st.
               </p>
 
               <h4>Solar Generation Calculation</h4>
@@ -201,6 +195,7 @@ const HelpSection: React.FC = () => {
                 <li><strong>Peak rate (c/kWh):</strong> The rate you pay for electricity during peak times. <em>Enter this value in cents per kWh (e.g., 35 for $0.35/kWh).</em></li>
                 <li><strong>Off-peak rate (c/kWh):</strong> The rate you pay for electricity during off-peak times. <em>Enter this value in cents per kWh.</em></li>
                 <li><strong>Solar feed-in tariff (c/kWh):</strong> The rate you receive for exporting excess solar energy to the grid. <em>Enter this value in cents per kWh.</em></li>
+                <li><strong>Export limit (kW):</strong> The maximum amount of solar power that can be exported to the grid per day. This reflects network restrictions or inverter settings that may cap how much solar energy you can send out. Any solar generation above this limit will not be exported.</li>
               </ul>
               <h4>Financial Summary</h4>
               <p>
@@ -224,9 +219,8 @@ const HelpSection: React.FC = () => {
               
               <p><strong>Upload errors:</strong></p>
               <ul>
-                <li>Make sure your file is in CSV format exported directly from Origin</li>
-                <li>Check that your file contains the required columns (Usage Type, Amount Used, From timestamp)</li>
-                <li>Ensure the file is not corrupted or too large (maximum size is 10MB)</li>
+                <li>Check that your file is in one of the supported formats and that it contains the required columns (see <a href="/solar/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats</a>).</li>
+                <li>Ensure the file is not corrupted or too large (maximum size is 15MB)</li>
               </ul>
               
               <p><strong>Solar data issues:</strong></p>

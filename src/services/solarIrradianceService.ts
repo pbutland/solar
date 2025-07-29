@@ -25,6 +25,9 @@ interface NASAPowerResponse {
 const NASA_POWER_BASE_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point';
 const SOLAR_PARAMETER = 'ALLSKY_SFC_SW_DWN'; // All Sky Surface Shortwave Downward Irradiance
 
+// Required to bring up NASA irradiance data to a meaningful figure
+const MULTIPLIER = 16;
+
 /**
  * Fetch solar irradiance data from NASA POWER API
  * 
@@ -169,7 +172,7 @@ export async function getApiSolarIrradiance(
     let currentDate = new Date(`${year}-01-01T00:00:00Z`);
     for (let i = 0; i < apiData.length; i++) {
       const dateStr = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
-      entries.push({ date: dateStr, value: apiData[i] });
+      entries.push({ date: dateStr, value: apiData[i] * MULTIPLIER });
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
