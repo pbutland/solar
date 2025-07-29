@@ -95,8 +95,16 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
         }
       } else if (hasConsumptionData && aggregated.totalConsumption) {
         dataPoint.totalConsumption = Math.round((aggregated.totalConsumption[i]?.value || 0) * 100) / 100;
-      } else if (hasSolarData && aggregated.generationSolar) {
-        dataPoint.generationSolar = Math.round((aggregated.generationSolar[i]?.value || 0) * 100) / 100;
+      } else if (hasSolarData) {
+        if (aggregated.generationSolar) {
+          dataPoint.generationSolar = Math.round((aggregated.generationSolar[i]?.value || 0) * 100) / 100;
+        }
+        if (aggregated.exportedSolar) {
+          dataPoint.exportedSolar = Math.round((aggregated.exportedSolar[i]?.value || 0) * 100) / 100;
+        }
+        if (aggregated.unusedSolar) {
+          dataPoint.unusedSolar = Math.round((aggregated.unusedSolar[i]?.value || 0) * 100) / 100;
+        }
       }
       data.push(dataPoint);
     }
@@ -171,7 +179,7 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
             <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Consumption: {data.totalConsumption} kWh</p>
           )}
           {typeof data.generationSolar === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#82ca9d' }}>●</span>&nbsp;Generation: {data.generationSolar} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Total Generated: {data.generationSolar} kWh</p>
           )}
         </div>
       );
@@ -295,9 +303,13 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
             {!hasStacked && hasConsumptionData && (
               <Bar dataKey="totalConsumption" fill="#8884d8" name="Total Consumption" />
             )}
-            {/* Only solar generation */}
+            {/* Only solar data: show exported + unused as stacked bar and total as line */}
             {!hasStacked && !hasConsumptionData && hasSolarData && (
-              <Bar dataKey="generationSolar" fill="#82ca9d" name="Solar Generation" />
+              <>
+                <Bar dataKey="exportedSolar" stackId="solarOnly" fill="#ff7300" name="Exported Solar" />
+                <Bar dataKey="unusedSolar" stackId="solarOnly" fill="#A9A9A9" name="Unused Solar" />
+                <Line type="monotone" dataKey="generationSolar" stroke="#0057b8" strokeWidth={2} dot={false} name="Total Generated" />
+              </>
             )}
             {/* Show totalConsumption as a line only when stacked (i.e., both solar and consumption data are present) */}
             {hasStacked && hasConsumptionData && (
