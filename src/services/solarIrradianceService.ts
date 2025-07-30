@@ -1,205 +1,87 @@
 import type { EnergyData, EnergyPeriodEntry } from '../types/index';
 import { calculateSunriseSunset } from '../utils/solarTime';
 import { toZonedTime } from 'date-fns-tz';
+import { fetchNasaPowerIrradianceData } from './nasaPowerApiService';
+import { fetchOpenMeteoIrradianceData } from './openMeteoApiService';
+
+// Default period in minutes for solar irradiance data processing
+export const PERIOD_IN_MINUTES = 30;
+
+// Solar irradiance data sources as a const object and union type
+export const SolarIrradianceSource = {
+  NASA_POWER_API: 'NASA_POWER_API',
+  OPEN_METEO: 'OPEN_METEO',
+} as const;
+
+export type SolarIrradianceSource = typeof SolarIrradianceSource[keyof typeof SolarIrradianceSource];
 
 /**
  * Solar Irradiance Service
  * Handles NASA POWER API integration for solar irradiance data
  */
 
-// Type definitions for NASA POWER API response
-interface NASAPowerResponse {
-  type: string;
-  geometry: {
-    type: string;
-    coordinates: number[];
-  };
-  properties: {
-    parameter: {
-      ALLSKY_SFC_SW_DWN: Record<string, number>;
-    };
-  };
-}
+// ...existing code...
 
-// NASA POWER API configuration
-const NASA_POWER_BASE_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point';
-const SOLAR_PARAMETER = 'ALLSKY_SFC_SW_DWN'; // All Sky Surface Shortwave Downward Irradiance
-
-// Required to bring up NASA irradiance data to a meaningful figure
-const MULTIPLIER = 16;
+// ...existing code...
 
 /**
- * Fetch solar irradiance data from NASA POWER API
- * 
- * @param latitude - Location latitude
- * @param longitude - Location longitude
- * @returns Promise resolving to daily solar irradiance data in Wh/m²/day
+ * Unified function to get solar irradiance data for a given source
  */
-async function fetchNASAPowerData(latitude: number, longitude: number): Promise<number[]> {
-  // Get date range for the past year (API has 5-day delay)
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() - 5); // Account for API delay
-  const startDate = new Date(endDate);
-  startDate.setFullYear(startDate.getFullYear() - 1); // Go back 1 year
-  startDate.setDate(startDate.getDate() + 1);
-
-  // Format dates as YYYYMMDD for NASA POWER API
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}${month}${day}`;
-  };
-  
-  const startDateStr = formatDate(startDate);
-  const endDateStr = formatDate(endDate);
-  
-  // Construct NASA POWER API URL
-  const url = `${NASA_POWER_BASE_URL}?parameters=${SOLAR_PARAMETER}&community=SB&longitude=${longitude}&latitude=${latitude}&start=${startDateStr}&end=${endDateStr}&format=JSON`;
-  
-  console.log(`Fetching solar data from NASA POWER API for lat: ${latitude}, lng: ${longitude}`);
-  
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    throw new Error(`NASA POWER API request failed: ${response.status} ${response.statusText}`);
-  }
-  
-  const data: NASAPowerResponse = await response.json();
-  
-  // Extract daily irradiance values
-  const irradianceEntries = Object.entries(data.properties.parameter.ALLSKY_SFC_SW_DWN);
-  if (irradianceEntries.length === 0) {
-    throw new Error('No irradiance data received from NASA POWER API');
-  }
-
-  // Set all dates to current year and sort
-  const currentYear = new Date().getFullYear();
-  const irradianceWithDates = irradianceEntries.map(([dateKey, value]) => {
-    // dateKey is YYYYMMDD
-    const month = dateKey.substring(4, 6);
-    const day = dateKey.substring(6, 8);
-    // Set year to current year
-    const date = new Date(`${currentYear}-${month}-${day}T00:00:00Z`);
-    return { date, value };
-  });
-
-  // Sort by date
-  irradianceWithDates.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  // Map to values
-  const orderedIrradiance = irradianceWithDates.map(entry => entry.value);
-
-  // If not 365 values, throw error
-  if (orderedIrradiance.length !== 365) {
-    throw new Error(`NASA POWER API did not return 365 daily values, received ${orderedIrradiance.length}`);
-  }
-
-  // Validate all values are positive
-  const hasInvalidValues = orderedIrradiance.some(value => value <= 0 || isNaN(value));
-  if (hasInvalidValues) {
-    console.warn('Found invalid irradiance values, replacing with interpolated values');
-    const validValues = orderedIrradiance.filter(value => value > 0 && !isNaN(value));
-    const average = validValues.length > 0
-      ? validValues.reduce((sum, val) => sum + val, 0) / validValues.length
-      : 5.0; // 5 kWh/m²/day fallback
-    for (let i = 0; i < orderedIrradiance.length; i++) {
-      if (orderedIrradiance[i] <= 0 || isNaN(orderedIrradiance[i])) {
-        orderedIrradiance[i] = average;
-      }
-    }
-  }
-
-  console.log(`Successfully processed NASA POWER data: ${orderedIrradiance.length} days, values range: ${Math.min(...orderedIrradiance).toFixed(2)} - ${Math.max(...orderedIrradiance).toFixed(2)} Wh/m²/day`);
-  return orderedIrradiance;
-}
-
-/**
- * Get solar irradiance data from NASA POWER API
- * Requires valid coordinates and throws an error if data cannot be fetched
- * 
- * @param latitude - Location latitude (required for API call)
- * @param longitude - Location longitude (required for API call)
- * @returns Promise resolving to daily solar irradiance data in Wh/m²/day
- * @throws Error if coordinates are missing or API call fails
- */
-export async function getApiSolarIrradiance(
-  latitude?: number, 
-  longitude?: number
+export async function getSolarIrradiance(
+  latitude: number,
+  longitude: number,
+  source: SolarIrradianceSource
+  // TODO: allow time intervals to be specified in the future
 ): Promise<EnergyData> {
-  // Require coordinates to be provided
   if (latitude === undefined || longitude === undefined) {
     throw new Error('Location coordinates are required to fetch solar data. Please input a location.');
   }
 
-  console.log(`Attempting to fetch solar data for coordinates: ${latitude}, ${longitude}`);
-  
+  let rawEntries: { date: string; value: number }[] = [];
   try {
-    const apiData = await fetchNASAPowerData(latitude, longitude);
-    
-    // Validate the API data
-    if (!apiData || !Array.isArray(apiData) || apiData.length !== 365) {
-      throw new Error(`Invalid API response: expected 365 daily values, received ${apiData?.length || 'invalid data'}`);
+    switch (source) {
+      case SolarIrradianceSource.NASA_POWER_API:
+        rawEntries = await fetchNasaPowerIrradianceData(latitude, longitude);
+        break;
+      case SolarIrradianceSource.OPEN_METEO:
+        rawEntries = await fetchOpenMeteoIrradianceData(latitude, longitude);
+        break;
+      default:
+        throw new Error('Unknown solar irradiance data source');
     }
-    
-    // Check for values that are out of valid range and fix them
-    const invalidValues = apiData.filter(val => 
-      typeof val !== 'number' || val < 0 || isNaN(val)
-    );
-    
-    if (invalidValues.length > 0) {
-      console.warn(`Found ${invalidValues.length} invalid solar data values:`, invalidValues);
-      console.warn('Setting invalid values to interpolated averages and continuing...');
-      
-      // Fix invalid values by setting them to average of valid values
-      const validValues = apiData.filter(val => typeof val === 'number' && val > 0 && !isNaN(val));
-      const average = validValues.length > 0 
-        ? validValues.reduce((sum, val) => sum + val, 0) / validValues.length 
-        : 5000; // 5 kWh/m²/day fallback
-      
-      for (let i = 0; i < apiData.length; i++) {
-        const val = apiData[i];
-        if (typeof val !== 'number' || val < 0 || isNaN(val)) {
-          apiData[i] = average;
-        }
-      }
-    }
-    
-    console.log('Successfully retrieved and validated NASA POWER API data');
-    // Build IrradianceEntry array with date starting at Jan 1 of current year
-    const year = new Date().getFullYear();
-    const entries: { date: string; value: number }[] = [];
-    let currentDate = new Date(`${year}-01-01T00:00:00Z`);
-    for (let i = 0; i < apiData.length; i++) {
-      const dateStr = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
-      entries.push({ date: dateStr, value: apiData[i] * MULTIPLIER });
-      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-    }
-
-    // Slice data to 30 minute blocks
-    const values = processSolarIrradianceData(entries, latitude, longitude, 30);
-    return {
-      periodInMinutes: 30,
-      values: values || []
-    }
-    
-  } catch (apiError) {
-    console.error('NASA POWER API failed:', apiError);
-    
-    // Provide more specific error messages based on the type of error
-    if (apiError instanceof Error) {
-      if (apiError.message.includes('NASA POWER API request failed')) {
+  } catch (err: any) {
+    // Error handling per source
+    if (err instanceof Error) {
+      if (err.message.includes('NASA POWER API request failed')) {
         throw new Error(`Unable to fetch solar data for this location. The NASA POWER API service may be temporarily unavailable. Please try again later or select a different location.`);
-      } else if (apiError.message.includes('No irradiance data received')) {
+      } else if (err.message.includes('No irradiance data received')) {
         throw new Error(`No solar data available for the selected location. Please try a different location with better data coverage.`);
-      } else if (apiError.message.includes('Invalid')) {
+      } else if (err.message.includes('Invalid')) {
         throw new Error(`Invalid solar data received for this location. Please try selecting a different location.`);
+      } else if (err.message.includes('Open Meteo')) {
+        throw new Error('Open Meteo data source not yet implemented.');
       }
     }
-    
-    // Generic error message for any other failures
     throw new Error(`Failed to retrieve solar data for the selected location (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Please verify the location is valid and try again.`);
   }
+
+  // Set all dates to current year and sort
+  const year = new Date().getFullYear();
+  const entries: { date: string; value: number }[] = [];
+  let currentDate = new Date(`${year}-01-01T00:00:00Z`);
+  for (let i = 0; i < rawEntries.length; i++) {
+    const dateStr = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
+    const value = source === SolarIrradianceSource.NASA_POWER_API ? rawEntries[i].value : rawEntries[i].value;
+    entries.push({ date: dateStr, value });
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+  }
+
+  // Slice data to PERIOD_IN_MINUTES blocks
+  const values = processSolarIrradianceData(entries, latitude, longitude, PERIOD_IN_MINUTES);
+  return {
+    periodInMinutes: PERIOD_IN_MINUTES,
+    values: values || []
+  };
 }
 
 /**
@@ -209,7 +91,7 @@ function processSolarIrradianceData(
   data: EnergyPeriodEntry[],
   latitude: number,
   longitude: number,
-  periodInMinutes: number = 30
+  periodInMinutes: number = PERIOD_IN_MINUTES
 ): EnergyPeriodEntry[] | null {
 
   if (!data || data.length === 0) {

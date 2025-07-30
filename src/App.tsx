@@ -8,7 +8,7 @@ import HelpSection from './components/HelpSection'
 import CostInputs from './components/CostInputs'
 import FinancialSummary from './components/FinancialSummary'
 import type { EnergyData, EnergyCalculations, EnergySystemDetails } from './types/index'
-import { getApiSolarIrradiance } from './services/solarIrradianceService'
+import { getSolarIrradiance, SolarIrradianceSource } from './services/solarIrradianceService'
 import { calculateConsumptionData, calculateSolarGeneration } from './utils/solarCalculations'
 
 
@@ -93,7 +93,7 @@ function App() {
     try {
       console.log('Loading solar irradiance for location:', { latitude, longitude })
       setSolarError(null) // Clear any previous errors
-      const irradiance = await getApiSolarIrradiance(latitude, longitude)
+      const irradiance = await getSolarIrradiance(latitude, longitude, SolarIrradianceSource.NASA_POWER_API)
       setRawSolarIrradiance(irradiance)
     } catch (error) {
       console.error('Failed to load solar irradiance data:', error)
