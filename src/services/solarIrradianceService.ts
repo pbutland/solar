@@ -17,12 +17,7 @@ export type SolarIrradianceSource = typeof SolarIrradianceSource[keyof typeof So
 
 /**
  * Solar Irradiance Service
- * Handles NASA POWER API integration for solar irradiance data
  */
-
-// ...existing code...
-
-// ...existing code...
 
 /**
  * Unified function to get solar irradiance data for a given source
@@ -79,21 +74,6 @@ export async function getSolarIrradiance(
   // Sort by date
   entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
-  
-  // // Set all dates to current year and sort
-  // const year = new Date().getFullYear();
-  // const entries: { date: string; value: number }[] = [];
-  // let currentDate = new Date(`${year}-01-01T00:00:00Z`);
-  // for (let i = 0; i < rawEntries.length; i++) {
-  //   const dateStr = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
-  //   const value = rawEntries[i].value;
-  //   entries.push({ date: dateStr, value });
-  //   currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-  // }
-
-  // // Sort by date
-  // entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
   // Slice data to PERIOD_IN_MINUTES blocks
   const values = processSolarIrradianceData(entries, latitude, longitude, PERIOD_IN_MINUTES);
   return {
