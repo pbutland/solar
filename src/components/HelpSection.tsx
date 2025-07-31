@@ -72,7 +72,7 @@ const HelpSection: React.FC = () => {
                 <li>Powerpal</li>
               </ul>
               <p>
-                For a detailed description of each supported file format, including required columns, see: <a href="/solar/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats</a>
+                For a detailed description of each supported file format, including required columns, see: <a href={`${import.meta.env.BASE_URL}data-file-formats.html`} target="_blank" rel="noopener noreferrer">Supported Data File Formats</a>
               </p>
               <p>
                 <em>Note: The system will process consumption data only and ignore other entries.</em>
@@ -219,7 +219,7 @@ const HelpSection: React.FC = () => {
               
               <p><strong>Upload errors:</strong></p>
               <ul>
-                <li>Check that your file is in one of the supported formats and that it contains the required columns (see <a href="/solar/data-file-formats.html" target="_blank" rel="noopener noreferrer">Supported Data File Formats</a>).</li>
+                <li>Check that your file is in one of the supported formats and that it contains the required columns (see <a href={`${import.meta.env.BASE_URL}data-file-formats.html`} target="_blank" rel="noopener noreferrer">Supported Data File Formats</a>).</li>
                 <li>Ensure the file is not corrupted or too large (maximum size is 15MB)</li>
               </ul>
               
