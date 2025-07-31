@@ -8,7 +8,7 @@ import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
 export class NEM12CsvParser implements EnergyCsvParser {
   isValid(data: any[] | string[][]): boolean {
     // Check if data is array-of-arrays and first cell is '100' (NEM12 header)
-    return Array.isArray(data) && data.length > 0 && Array.isArray(data[0]) && data[0][0] === '100';
+    return Array.isArray(data) && data.length > 0 && Array.isArray(data[0]) && (data[0][0] === '100' || data[0][0] === '200' || data[0][0] === '300');
   }
 
   parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
