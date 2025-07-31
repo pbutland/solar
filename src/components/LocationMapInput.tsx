@@ -23,7 +23,8 @@ function LocationMarker({ position, onLocationChange }: { position: { lat: numbe
   useMapEvents({
     click(e: LeafletMouseEvent) {
       if (onLocationChange) {
-        onLocationChange(e.latlng.lat, e.latlng.lng);
+        const normalizedLng = ((e.latlng.lng + 180) % 360) - 180;
+        onLocationChange(e.latlng.lat, normalizedLng);
       }
     },
   });
