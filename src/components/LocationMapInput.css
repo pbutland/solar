@@ -1,0 +1,75 @@
+.latlong-section {
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 1.5rem;
+}
+
+.latlong-section h3 {
+  margin-top: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.location-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #222;
+}
+
+.location-input-row label {
+  flex: 0.5;
+  font-weight: 500;
+}
+
+.location-input-row input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: border-color 0.2s ease;
+}
+
+.location-output-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #222;
+}
+
+.location-output-row label {
+  font-weight: 500;
+}
+
+.latlong-section input[type="number"]:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.location-toggle-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #333;
+  padding: 0.25em 0.5em;
+  transition: background 0.2s;
+}
+
+.location-toggle-btn:focus {
+  outline: none;
+}
+
+.location-toggle-btn:hover {
+  background: #f0f0f0;
+}
+
+.latlong-section input:invalid {
+  border-color: #e74c3c;
+}

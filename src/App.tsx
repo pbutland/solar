@@ -3,7 +3,8 @@ import './App.css'
 import EnergyChart from './components/EnergyChart'
 import InstallationControls from './components/InstallationControls'
 import FileUpload from './components/FileUpload'
-import LocationInput from './components/LocationInput'
+// import LocationInput from './components/LocationInput'
+import LocationMapInput from './components/LocationMapInput'
 import HelpSection from './components/HelpSection'
 import CostInputs from './components/CostInputs'
 import FinancialSummary from './components/FinancialSummary'
@@ -213,7 +214,8 @@ function App() {
         <p>Discover your home's solar potential</p>
       </header>
       <div className="input-section">
-        <LocationInput onLocationChange={handleLocationChange} />
+        <LocationMapInput onLocationChange={handleLocationChange} />
+        {/* <LocationInput onLocationChange={handleLocationChange} /> */}
         <FileUpload 
           onDataLoaded={handleDataLoaded}
           onError={handleUploadError}
