@@ -43,7 +43,7 @@ const InstallationControls: React.FC<InstallationControlsProps> = ({
         <h3>Installation Size: {installationSize.toFixed(2)} kW</h3>
         <input
           type="range"
-          min="1"
+          min="0"
           max="25"
           step="0.5"
           value={installationSize}

@@ -38,7 +38,7 @@ export function calculateConsumptionData(energyCalculations: EnergyCalculations,
     feedInTariff,
     exportLimit
   } = systemDetails;
-  let batteryLevel = batteryCapacity; // in kWh
+  let batteryLevel = 0; // in kWh
 
   energyCalculations.exportedSolar = [];
   energyCalculations.consumptionGrid = [];
