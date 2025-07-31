@@ -16,7 +16,7 @@ interface NASAPowerResponse {
 
 const NASA_POWER_BASE_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point';
 const SOLAR_PARAMETER = 'ALLSKY_SFC_SW_DWN';
-export const MULTIPLIER = 25;
+export const MULTIPLIER = 16;
 
 /**
  * Fetch solar irradiance data from NASA POWER API
