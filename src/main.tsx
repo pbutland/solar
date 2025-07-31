@@ -5,9 +5,9 @@ import App from './App.tsx'
 import L from 'leaflet';
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: '/marker-icon-2x.png',
-  iconUrl: '/marker-icon.png',
-  shadowUrl: '/marker-shadow.png',
+  iconRetinaUrl: '/solar/marker-icon-2x.png',
+  iconUrl: '/solar/marker-icon.png',
+  shadowUrl: '/solar/marker-shadow.png',
 });
 
 createRoot(document.getElementById('root')!).render(
