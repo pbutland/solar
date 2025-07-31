@@ -10,7 +10,7 @@ export const PERIOD_IN_MINUTES = 30;
 // Solar irradiance data sources as a const object and union type
 export const SolarIrradianceSource = {
   NASA_POWER_API: 'NASA_POWER_API',
-  OPEN_METEO: 'OPEN_METEO',
+  OPEN_METEO_API: 'OPEN_METEO_API',
 } as const;
 
 export type SolarIrradianceSource = typeof SolarIrradianceSource[keyof typeof SolarIrradianceSource];
@@ -43,7 +43,7 @@ export async function getSolarIrradiance(
       case SolarIrradianceSource.NASA_POWER_API:
         rawEntries = await fetchNasaPowerIrradianceData(latitude, longitude);
         break;
-      case SolarIrradianceSource.OPEN_METEO:
+      case SolarIrradianceSource.OPEN_METEO_API:
         rawEntries = await fetchOpenMeteoIrradianceData(latitude, longitude);
         break;
       default:
@@ -66,15 +66,33 @@ export async function getSolarIrradiance(
   }
 
   // Set all dates to current year and sort
-  const year = new Date().getFullYear();
-  const entries: { date: string; value: number }[] = [];
-  let currentDate = new Date(`${year}-01-01T00:00:00Z`);
-  for (let i = 0; i < rawEntries.length; i++) {
-    const dateStr = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
-    const value = source === SolarIrradianceSource.NASA_POWER_API ? rawEntries[i].value : rawEntries[i].value;
-    entries.push({ date: dateStr, value });
-    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-  }
+  const currentYear = new Date().getFullYear();
+  const entries = rawEntries.map(entry => {
+    // date is YYYYMMDD
+    const month = entry.date.substring(4, 6);
+    const day = entry.date.substring(6, 8);
+    // Set year to current year
+    const dateStr = `${currentYear}-${month}-${day}`;
+    return { date: dateStr, value: entry.value };
+  });
+
+  // Sort by date
+  entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  
+  // // Set all dates to current year and sort
+  // const year = new Date().getFullYear();
+  // const entries: { date: string; value: number }[] = [];
+  // let currentDate = new Date(`${year}-01-01T00:00:00Z`);
+  // for (let i = 0; i < rawEntries.length; i++) {
+  //   const dateStr = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
+  //   const value = rawEntries[i].value;
+  //   entries.push({ date: dateStr, value });
+  //   currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+  // }
+
+  // // Sort by date
+  // entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Slice data to PERIOD_IN_MINUTES blocks
   const values = processSolarIrradianceData(entries, latitude, longitude, PERIOD_IN_MINUTES);

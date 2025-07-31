@@ -16,7 +16,7 @@ interface NASAPowerResponse {
 
 const NASA_POWER_BASE_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point';
 const SOLAR_PARAMETER = 'ALLSKY_SFC_SW_DWN';
-export const MULTIPLIER = 16;
+export const MULTIPLIER = 25;
 
 /**
  * Fetch solar irradiance data from NASA POWER API
@@ -60,19 +60,10 @@ export async function fetchNasaPowerIrradianceData(latitude: number, longitude: 
     throw new Error('No irradiance data received from NASA POWER API');
   }
 
-  // Set all dates to current year and sort
-  const currentYear = new Date().getFullYear();
+  // Convert to array of { date, value }
   const irradianceWithDates = irradianceEntries.map(([dateKey, value]) => {
-    // dateKey is YYYYMMDD
-    const month = dateKey.substring(4, 6);
-    const day = dateKey.substring(6, 8);
-    // Set year to current year
-    const dateStr = `${currentYear}-${month}-${day}`;
-    return { date: dateStr, value: value * MULTIPLIER };
+    return { date: dateKey, value: value * MULTIPLIER };
   });
-
-  // Sort by date
-  irradianceWithDates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // If not 365 values, throw error
   if (irradianceWithDates.length !== 365) {

@@ -93,7 +93,7 @@ function App() {
     try {
       console.log('Loading solar irradiance for location:', { latitude, longitude })
       setSolarError(null) // Clear any previous errors
-      const irradiance = await getSolarIrradiance(latitude, longitude, SolarIrradianceSource.NASA_POWER_API)
+      const irradiance = await getSolarIrradiance(latitude, longitude, SolarIrradianceSource.OPEN_METEO_API);
       setRawSolarIrradiance(irradiance)
     } catch (error) {
       console.error('Failed to load solar irradiance data:', error)
