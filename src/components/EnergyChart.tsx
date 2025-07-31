@@ -38,8 +38,7 @@ interface ChartDataPoint {
  * Shows net energy calculation and uses color coding for surplus/deficit days
  */
 
-
-const EnergyChart: React.FC<EnergyChartProps> = ({ 
+const EnergyChart: React.FC<EnergyChartProps> = ({
   energyCalculations, 
   timePeriod = 'month', 
   chartExpanded = false, 
@@ -151,6 +150,10 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
     chartData = [];
   }
 
+  // Helper to format numbers with thousands separators
+  const formatNumber = (num: number | undefined) =>
+    typeof num === 'number' ? num.toLocaleString() : '';
+
   // Custom tooltip formatter
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -161,25 +164,25 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
         <div className="chart-tooltip">
           <p className="tooltip-label">{tooltipLabel}</p>
           {typeof data.consumptionGrid === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#8884d8' }}>●</span>&nbsp;Grid: {data.consumptionGrid} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#8884d8' }}>●</span>&nbsp;Grid: {formatNumber(data.consumptionGrid)} kWh</p>
           )}
           {typeof data.consumptionSolar === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#82ca9d' }}>●</span>&nbsp;Solar: {data.consumptionSolar} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#82ca9d' }}>●</span>&nbsp;Solar: {formatNumber(data.consumptionSolar)} kWh</p>
           )}
           {typeof data.consumptionBattery === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#FFD700' }}>●</span>&nbsp;Battery: {data.consumptionBattery} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#FFD700' }}>●</span>&nbsp;Battery: {formatNumber(data.consumptionBattery)} kWh</p>
           )}
           {typeof data.exportedSolar === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#ff7300' }}>●</span>&nbsp;Exported: {data.exportedSolar} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#ff7300' }}>●</span>&nbsp;Exported: {formatNumber(data.exportedSolar)} kWh</p>
           )}
           {typeof data.unusedSolar === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#A9A9A9' }}>●</span>&nbsp;Unused Solar: {data.unusedSolar} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#A9A9A9' }}>●</span>&nbsp;Unused Solar: {formatNumber(data.unusedSolar)} kWh</p>
           )}
           {typeof data.totalConsumption === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Consumption: {data.totalConsumption} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Consumption: {formatNumber(data.totalConsumption)} kWh</p>
           )}
           {typeof data.generationSolar === 'number' && (
-            <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Total Generated: {data.generationSolar} kWh</p>
+            <p className="tooltip-consumption"><span style={{ color: '#0057b8' }}>●</span>&nbsp;Total Generated: {formatNumber(data.generationSolar)} kWh</p>
           )}
         </div>
       );
@@ -234,28 +237,28 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
           {hasDailyGeneration && (
             <div className="summary-item">
               <span className="summary-label">Annual Generation:</span>
-              <span className="summary-value">{Math.round(totalGeneration)} kWh</span>
+              <span className="summary-value">{formatNumber(Math.round(totalGeneration))} kWh</span>
             </div>
           )}
           {hasDailyConsumption && (
             <div className="summary-item">
               <span className="summary-label">Annual Consumption:</span>
-              <span className="summary-value">{Math.round(totalConsumption)} kWh</span>
+              <span className="summary-value">{formatNumber(Math.round(totalConsumption))} kWh</span>
             </div>
           )}
           {hasDailyGeneration && hasDailyConsumption && (
             <>
               <div className="summary-item">
                 <span className="summary-label">Net Energy:</span>
-                <span className={`summary-value ${netEnergy >= 0 ? 'surplus' : 'deficit'}`}>{netEnergy >= 0 ? '+' : ''}{Math.round(netEnergy)} kWh</span>
+                <span className={`summary-value ${netEnergy >= 0 ? 'surplus' : 'deficit'}`}>{netEnergy >= 0 ? '+' : ''}{formatNumber(Math.round(netEnergy))} kWh</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Surplus Days:</span>
-                <span className="summary-value surplus">{surplusDays}</span>
+                <span className="summary-value surplus">{formatNumber(surplusDays)}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Deficit Days:</span>
-                <span className="summary-value deficit">{deficitDays}</span>
+                <span className="summary-value deficit">{formatNumber(deficitDays)}</span>
               </div>
             </>
           )}
