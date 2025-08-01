@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
+import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 // NEM12 parser implementation
 // Reference: https://aemo.com.au/-/media/files/electricity/nem/retail_and_metering/market-settlements-and-transfer-solution-nem12-nem13-file-format-specification.pdf
@@ -51,10 +51,12 @@ export class NEM12CsvParser implements EnergyCsvParser {
 
     rawValues.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
-    
+    const filteredData = filterLastYearOfData(processedData);
+    const paddedData = padMissingDates(filteredData, periodInMinutes);
+
     return {
       periodInMinutes: currentIntervalLength,
-      values: filterLastYearOfData(processedData)
+      values: paddedData
     };
   }
 }

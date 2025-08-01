@@ -4,6 +4,7 @@ import { JemenaCsvParser } from './JemenaCsvParser';
 import { PowerpalCsvParser } from './PowerpalCsvParser';
 import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
 import { parseISO } from 'date-fns';
+import { format } from 'date-fns-tz';
 
 export interface EnergyCsvParser {
   isValid: (data: any[] | string[][]) => boolean;
@@ -63,7 +64,8 @@ export function filterLastYearOfData(data: EnergyPeriodEntry[]): EnergyPeriodEnt
     const updatedDate = new Date(d);
     updatedDate.setFullYear(currentYear);
     // Preserve time, month, day, timezone
-    return { ...entry, date: updatedDate.toISOString() };
+    const dateKey = format(updatedDate, "yyyy-MM-dd'T'HH:mm", { timeZone: 'UTC' });
+    return { ...entry, date: dateKey };
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return rearranged;
@@ -135,4 +137,28 @@ export function aggregateToInterval(
     }
     return result;
   }
+}
+
+export function padMissingDates(
+  data: EnergyPeriodEntry[],
+  periodInMinutes: number
+): EnergyPeriodEntry[] {
+  if (!data.length) return [];
+  const startDate = new Date(data[0].date);
+  const endDate = new Date(data[data.length - 1].date);
+  const blockMillis = periodInMinutes * 60 * 1000;
+  const filledData: EnergyPeriodEntry[] = [];
+  
+  let currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dateKey = format(currentDate, "yyyy-MM-dd'T'HH:mm", { timeZone: 'UTC' });
+    const existingEntry = data.find(entry => entry.date === dateKey);
+    filledData.push({
+      date: dateKey,
+      value: existingEntry ? existingEntry.value : 0,
+    });
+    currentDate.setTime(currentDate.getTime() + blockMillis);
+  }
+
+  return filledData;
 }

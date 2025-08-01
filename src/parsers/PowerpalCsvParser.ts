@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
+import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 /**
  * Powerpal CSV parser implementation
@@ -42,10 +42,12 @@ export class PowerpalCsvParser implements EnergyCsvParser {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
+    const filteredData = filterLastYearOfData(processedData);
+    const paddedData = padMissingDates(filteredData, periodInMinutes);
 
     return {
       periodInMinutes,
-      values: filterLastYearOfData(processedData),
+      values: paddedData
     };
   }
 }

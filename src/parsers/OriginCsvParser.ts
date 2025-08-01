@@ -2,7 +2,7 @@ import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
 import { parseISO } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
-import { aggregateToInterval, filterLastYearOfData } from './csvProcessor';
+import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 export class OriginCsvParser implements EnergyCsvParser {
   isValid(data: any[] | string[][]): boolean {
@@ -93,10 +93,12 @@ export class OriginCsvParser implements EnergyCsvParser {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
+    const filteredData = filterLastYearOfData(processedData);
+    const paddedData = padMissingDates(filteredData, periodInMinutes);
       
     return {
       periodInMinutes,
-      values: filterLastYearOfData(processedData)
+      values: paddedData
     };
   }
 }
