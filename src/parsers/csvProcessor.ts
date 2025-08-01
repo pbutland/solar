@@ -214,7 +214,7 @@ export function padMissingDates(
 }
 
 // Browser-compatible helper to fetch and parse average-vic-nem12.csv
-export function fetchAndParseAverageData(periodInMinutes: number, csvUrl = '/average-vic-nem12.csv'): Promise<Record<string, number>> {
+export function fetchAndParseAverageData(periodInMinutes: number, csvUrl = `${import.meta.env.BASE_URL}average-vic-nem12.csv`): Promise<Record<string, number>> {
   return fetch(csvUrl)
     .then(response => response.text())
     .then(content => {
