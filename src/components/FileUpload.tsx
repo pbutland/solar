@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import { getEnergyCsvParser } from '../parsers/csvProcessor';
 import type { EnergyData } from '../types/index';
+import InfoTooltip from './InfoTooltip'
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -127,7 +128,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
   return (
     <div className="file-upload-section">
       <div className="upload-header">
-        <h3>Upload Your Energy Data</h3>
+        <h3>Upload Your Energy Data <InfoTooltip text="See <strong>Data Upload Format</strong> help section below for supported formats"></InfoTooltip></h3>
         <p>Upload your electricity usage CSV file to see personalized solar analysis</p>
       </div>
       <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>

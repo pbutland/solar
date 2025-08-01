@@ -223,7 +223,7 @@ function App() {
       </div>
       {uploadSuccess && (
         <div className="upload-success">
-          ✅ Energy data uploaded successfully! Analysis updated with your data.
+          ✅ Energy data uploaded successfully!
         </div>
       )}
       {uploadError && (

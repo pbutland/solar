@@ -1,0 +1,36 @@
+.info-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.info-tooltip-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: box-shadow 0.2s;
+}
+
+.info-tooltip-icon:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #8884d833;
+}
+
+.info-tooltip-bubble {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  color: #222;
+  border: 1px solid #8884d8;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(136, 132, 216, 0.12);
+  padding: 10px 16px;
+  font-size: 15px;
+  max-width: 320px;
+  min-width: 120px;
+  word-break: break-word;
+  pointer-events: none;
+  opacity: 0.98;
+  transition: opacity 0.2s;
+}

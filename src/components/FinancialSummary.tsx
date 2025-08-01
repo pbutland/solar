@@ -1,5 +1,6 @@
 
 import type { EnergyCalculations } from '../types'
+import InfoTooltip from './InfoTooltip'
 import './FinancialSummary.css'
 
 interface FinancialSummaryProps {
@@ -92,21 +93,21 @@ function FinancialSummary({ energyCalculations, solarInstallationCost, batteryIn
       </div>
       <div className="summary-content">
         <div className="summary-item">
-          <label>Installation Cost:</label>
+          <label>Installation Cost</label>
           <span className="value">{formatCurrency(installationCost)}</span>
         </div>
         <div className="summary-item">
-          <label>{earnings ? 'Earnings' : 'Savings'} (per year):</label>
+          <label>{earnings ? 'Earnings' : 'Savings'} (per year) <InfoTooltip text='Excludes installation costs'></InfoTooltip></label>
           <span className="value">{savings === undefined ? '--' : formatCurrency(savings)}</span>
         </div>
         <div className="summary-item">
-          <label>ROI:</label>
+          <label>ROI</label>
           <span className="value">{formatROI(roiYears, roiPercent)}</span>
         </div>
-        {/* <div className="summary-item">
-          <label>NPV (24 years):</label>
+        <div className="summary-item">
+          <label>NPV (24 years) <InfoTooltip text='Net Present Value (over 24 years for solar, 12.5 years for battery (includes replacement costs), discount rate 5%)'></InfoTooltip></label>
           <span className="value">{npv === undefined ? '--' : formatCurrency(npv)}</span>
-        </div> */}
+        </div>
       </div>
     </div>
   )

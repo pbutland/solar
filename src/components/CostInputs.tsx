@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './CostInputs.css'
+import InfoTooltip from './InfoTooltip'
 
 interface CostInputsProps {
   installationSize: number
@@ -183,7 +184,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
     <div className="cost-inputs-section">
       <h3>Cost Configuration</h3>
       <div className="cost-input-row">
-        <label htmlFor="solar-cost">Solar Cost ($/kW)</label>
+        <label htmlFor="solar-cost">Solar Cost ($/kW) <InfoTooltip text='Should include inverter cost'></InfoTooltip></label>
         <input
           type="number"
           id="solar-cost"
@@ -248,7 +249,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
         />
       </div>
       <div className="cost-input-row">
-        <label htmlFor="export-limit">Daily Export Limit (kW)</label>
+        <label htmlFor="export-limit">Daily Export Limit (kW) <InfoTooltip text='Remove value if no daily export limit'></InfoTooltip></label>
         <input
           type="number"
           id="export-limit"

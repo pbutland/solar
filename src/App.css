@@ -40,16 +40,18 @@ header p {
 .input-section {
   display: flex;
   flex-direction: row;
-  gap: 2rem;
+  gap: 1rem;
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 /* Media query for responsive layout on smaller screens */
 @media (max-width: 768px) {
   .input-section {
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    margin-top: 0;
   }
 }
 
@@ -100,7 +102,7 @@ header p {
   border: 1px solid #bbdefb;
   border-radius: 8px;
   padding: 1.5rem;
-  margin: 2rem 0;
+  margin-top: 1rem;
   text-align: center;
   font-size: 1.1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -114,15 +116,19 @@ header p {
 main {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 @media (max-width: 768px) {
   main {
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    gap: 0rem;
+    margin-top: 1rem;
+  }
+
+  .no-data-message {
+    margin-bottom: 1rem;
   }
 }
 
@@ -148,7 +154,7 @@ main {
 @media (min-width: 768px) {
   main {
     flex-direction: row;
-    gap: 2rem;
+    gap: 1rem;
     align-items: flex-start;
     justify-content: center;
   }
