@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import type { LegendPayload } from 'recharts';
 import {
   ComposedChart,
   Bar,
@@ -32,6 +33,24 @@ interface ChartDataPoint {
   generationSolar?: number;
 }
 
+const consumptionGridDataKey = 'consumptionGrid';
+const consumptionSolarDataKey = 'consumptionSolar';
+const consumptionBatteryDataKey = 'consumptionBattery';
+const exportedSolarDataKey = 'exportedSolar';
+const unusedSolarDataKey = 'unusedSolar';
+const totalConsumptionDataKey = 'totalConsumption';
+const generationSolarDataKey = 'generationSolarDataKey';
+
+const ENERGY_CHART_DATA_KEYS = {
+  consumptionGrid: false,
+  consumptionSolar: false,
+  consumptionBattery: false,
+  exportedSolar: false,
+  unusedSolar: false,
+  totalConsumption: false,
+  generationSolar: false
+};
+
 /**
  * EnergyChart Component
  * Displays daily consumption and solar generation data with dual y-axis
@@ -45,6 +64,8 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
   onToggleChartExpanded 
 }) => {
   const [localTimePeriod, setLocalTimePeriod] = React.useState<TimePeriod>(timePeriod);
+  const [barProps, setBarProps] = useState<Record<string, boolean>>(ENERGY_CHART_DATA_KEYS);
+
   const hasConsumptionData = Array.isArray(energyCalculations?.totalConsumption) && energyCalculations.totalConsumption.length > 0;
   const hasSolarData = Array.isArray(energyCalculations?.generationSolar) && energyCalculations.generationSolar.length > 0;
   const hasStacked =
@@ -57,6 +78,22 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
   if (!hasConsumptionData && !hasSolarData) {
     return null;
   }
+
+  // Handles toggling bar visibility when a legend item is clicked
+  const selectBar = (data: LegendPayload) => {
+    const key = data?.dataKey;
+    if (typeof key !== 'string') return;
+    if (Object.prototype.hasOwnProperty.call(ENERGY_CHART_DATA_KEYS, key)) {
+      setBarProps((prev: Record<string, boolean>) => ({
+        ...prev,
+        [key]: !prev[key]
+      }));
+    }
+  };
+  // Helper to get the show value for a given dataKey
+  const isBarHidden = (dataKey: string) => {
+    return barProps[dataKey] ? barProps[dataKey] : false;
+  };
 
   const effectiveTimePeriod = localTimePeriod;
   const aggregated = energyCalculations ? aggregateEnergyCalculationsToPeriod(energyCalculations, effectiveTimePeriod) : null;
@@ -291,32 +328,32 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
             />
             <YAxis label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} tick={{ fontSize: 12 }} axisLine={{ stroke: '#ccc' }} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: '10px' }} />
+            <Legend onClick={selectBar} verticalAlign="bottom" wrapperStyle={{ paddingTop: '10px' }} />
             {/* Stacked bars for all flows if both data sets exist */}
             {hasStacked && (
               <>
-                <Bar dataKey="consumptionGrid" stackId="a" fill="#8884d8" name="Grid Consumption" />
-                <Bar dataKey="consumptionSolar" stackId="a" fill="#82ca9d" name="Solar Used" />
-                <Bar dataKey="consumptionBattery" stackId="a" fill="#FFD700" name="Battery Consumption" />
-                <Bar dataKey="exportedSolar" stackId="a" fill="#ff7300" name="Exported Solar" />
-                <Bar dataKey="unusedSolar" stackId="a" fill="#A9A9A9" name="Unused Solar" />
+                <Bar hide={isBarHidden(consumptionGridDataKey)} dataKey={consumptionGridDataKey} stackId="a" fill="#8884d8" name="Grid Consumption" />
+                <Bar hide={isBarHidden(consumptionSolarDataKey)} dataKey={consumptionSolarDataKey} stackId="a" fill="#82ca9d" name="Solar Used" />
+                <Bar hide={isBarHidden(consumptionBatteryDataKey)} dataKey={consumptionBatteryDataKey} stackId="a" fill="#FFD700" name="Battery Consumption" />
+                <Bar hide={isBarHidden(exportedSolarDataKey)} dataKey={exportedSolarDataKey} stackId="a" fill="#ff7300" name="Exported Solar" />
+                <Bar hide={isBarHidden(unusedSolarDataKey)} dataKey={unusedSolarDataKey} stackId="a" fill="#A9A9A9" name="Unused Solar" />
               </>
             )}
             {/* Only total consumption as bar (when not stacked) */}
             {!hasStacked && hasConsumptionData && (
-              <Bar dataKey="totalConsumption" fill="#8884d8" name="Total Consumption" />
+              <Bar hide={isBarHidden(totalConsumptionDataKey)} dataKey={totalConsumptionDataKey} fill="#8884d8" name="Total Consumption" />
             )}
             {/* Only solar data: show exported + unused as stacked bar and total as line */}
             {!hasStacked && !hasConsumptionData && hasSolarData && (
               <>
-                <Bar dataKey="exportedSolar" stackId="solarOnly" fill="#ff7300" name="Exported Solar" />
-                <Bar dataKey="unusedSolar" stackId="solarOnly" fill="#A9A9A9" name="Unused Solar" />
-                <Line type="monotone" dataKey="generationSolar" stroke="#0057b8" strokeWidth={2} dot={false} name="Total Generated" />
+                <Bar hide={isBarHidden(exportedSolarDataKey)} dataKey={exportedSolarDataKey} stackId="solarOnly" fill="#ff7300" name="Exported Solar" />
+                <Bar hide={isBarHidden(unusedSolarDataKey)} dataKey={unusedSolarDataKey} stackId="solarOnly" fill="#A9A9A9" name="Unused Solar" />
+                <Line hide={isBarHidden(generationSolarDataKey)} type="monotone" dataKey={generationSolarDataKey} stroke="#0057b8" strokeWidth={2} dot={false} name="Total Generated" />
               </>
             )}
             {/* Show totalConsumption as a line only when stacked (i.e., both solar and consumption data are present) */}
             {hasStacked && hasConsumptionData && (
-              <Line type="monotone" dataKey="totalConsumption" stroke="#0057b8" strokeWidth={2} dot={false} name="Total Consumption" />
+              <Line hide={isBarHidden(totalConsumptionDataKey)} type="monotone" dataKey={totalConsumptionDataKey} stroke="#0057b8" strokeWidth={2} dot={false} name="Total Consumption" />
             )}
           </ComposedChart>
         </ResponsiveContainer>
