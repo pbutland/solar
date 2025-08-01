@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
+import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 // NEM12 parser implementation
 // Reference: https://aemo.com.au/-/media/files/electricity/nem/retail_and_metering/market-settlements-and-transfer-solution-nem12-nem13-file-format-specification.pdf
@@ -11,7 +11,7 @@ export class NEM12CsvParser implements EnergyCsvParser {
     return Array.isArray(data) && data.length > 0 && Array.isArray(data[0]) && (data[0][0] === '100' || data[0][0] === '200' || data[0][0] === '300');
   }
 
-  parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
+  async parse(data: any[] | string[][], periodInMinutes: number = 30): Promise<EnergyData> {
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
       throw new Error('NEM12 parser expects array-of-arrays input');
     }
@@ -52,7 +52,8 @@ export class NEM12CsvParser implements EnergyCsvParser {
     rawValues.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
     const filteredData = filterLastYearOfData(processedData);
-    const paddedData = padMissingDates(filteredData, periodInMinutes);
+    const averageData = await fetchAndParseAverageData(periodInMinutes);
+    const paddedData = padMissingDates(filteredData, periodInMinutes, averageData);
 
     return {
       periodInMinutes: currentIntervalLength,

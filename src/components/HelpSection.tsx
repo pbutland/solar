@@ -77,6 +77,9 @@ const HelpSection: React.FC = () => {
               <p>
                 <em>Note: The system will process consumption data only and ignore other entries.</em>
               </p>
+              <div style={{ marginTop: '1em', background: '#f8f8f8', padding: '0.75em', borderRadius: '6px' }}>
+                <strong>Tip for Best Results:</strong> For the most accurate analysis, upload a full year of consumption data. If less is provided, missing periods are filled using average VIC data, scaled to match your usage pattern.
+              </div>
             </div>
           )}
         </div>

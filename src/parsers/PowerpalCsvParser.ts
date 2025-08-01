@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
+import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 /**
  * Powerpal CSV parser implementation
@@ -17,7 +17,7 @@ export class PowerpalCsvParser implements EnergyCsvParser {
     return false;
   }
 
-  parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
+  async parse(data: any[] | string[][], periodInMinutes: number = 30): Promise<EnergyData> {
     const csvRows = data as { [key: string]: string }[];
 
     // Aggregate by block of periodInMinutes
@@ -43,7 +43,8 @@ export class PowerpalCsvParser implements EnergyCsvParser {
 
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
     const filteredData = filterLastYearOfData(processedData);
-    const paddedData = padMissingDates(filteredData, periodInMinutes);
+    const averageData = await fetchAndParseAverageData(periodInMinutes);
+    const paddedData = padMissingDates(filteredData, periodInMinutes, averageData);
 
     return {
       periodInMinutes,

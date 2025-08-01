@@ -2,7 +2,7 @@ import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
 import { parseISO } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
-import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
+import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 export class OriginCsvParser implements EnergyCsvParser {
   isValid(data: any[] | string[][]): boolean {
@@ -13,7 +13,7 @@ export class OriginCsvParser implements EnergyCsvParser {
     return false;
   }
 
-  parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
+  async parse(data: any[] | string[][], periodInMinutes: number = 30): Promise<EnergyData> {
     const csvRows = data as { [key: string]: string }[];
     const blockConsumption: { [key: string]: number } = {};
 
@@ -94,7 +94,8 @@ export class OriginCsvParser implements EnergyCsvParser {
 
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
     const filteredData = filterLastYearOfData(processedData);
-    const paddedData = padMissingDates(filteredData, periodInMinutes);
+    const averageData = await fetchAndParseAverageData(periodInMinutes);
+    const paddedData = padMissingDates(filteredData, periodInMinutes, averageData);
       
     return {
       periodInMinutes,

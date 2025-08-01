@@ -33,8 +33,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
             ) {
               // NEM12: use array-of-arrays
               try {
-                const processedData = getEnergyCsvParser(previewResults.data as string[][]).parse(previewResults.data as string[][]);
-                onDataLoaded(processedData);
+                getEnergyCsvParser(previewResults.data as string[][]).parse(previewResults.data as string[][]).then((processedData) => {
+                  onDataLoaded(processedData);
+                });
               } catch (error) {
                 onError(error instanceof Error ? `Error processing file: ${error.message}` : 'An unknown error occurred during file processing.');
               }
@@ -45,8 +46,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
                 skipEmptyLines: true,
                 complete: (results) => {
                   try {
-                    const processedData = getEnergyCsvParser(results.data as any[]).parse(results.data as any[]);
-                    onDataLoaded(processedData);
+                    getEnergyCsvParser(results.data as any[]).parse(results.data as any[]).then((processedData) => {
+                      onDataLoaded(processedData);
+                    });
                   } catch (error) {
                     onError(error instanceof Error ? `Error processing file: ${error.message}` : 'An unknown error occurred during file processing.');
                   }
@@ -86,8 +88,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
           ) {
             // NEM12: use array-of-arrays
             try {
-              const processedData = getEnergyCsvParser(previewResults.data as string[][]).parse(previewResults.data as string[][]);
-              onDataLoaded(processedData);
+              getEnergyCsvParser(previewResults.data as string[][]).parse(previewResults.data as string[][]).then((processedData) => {
+                onDataLoaded(processedData);
+              });
             } catch (error) {
               onError(error instanceof Error ? `Error processing file: ${error.message}` : 'An unknown error occurred during file processing.');
             }
@@ -98,8 +101,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
               skipEmptyLines: true,
               complete: (results) => {
                 try {
-                  const processedData = getEnergyCsvParser(results.data as any[]).parse(results.data as any[]);
-                  onDataLoaded(processedData);
+                  getEnergyCsvParser(results.data as any[]).parse(results.data as any[]).then((processedData) => {
+                    onDataLoaded(processedData);
+                  });
                 } catch (error) {
                   onError(error instanceof Error ? `Error processing file: ${error.message}` : 'An unknown error occurred during file processing.');
                 }

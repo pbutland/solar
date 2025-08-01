@@ -1,6 +1,6 @@
 import type { EnergyCsvParser } from './csvProcessor';
 import type { EnergyData } from '../types/index.js';
-import { aggregateToInterval, filterLastYearOfData, padMissingDates } from './csvProcessor';
+import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 // Jemena CSV parser implementation
 export class JemenaCsvParser implements EnergyCsvParser {
@@ -12,7 +12,7 @@ export class JemenaCsvParser implements EnergyCsvParser {
     return false;
   }
 
-  parse(data: any[] | string[][], periodInMinutes: number = 30): EnergyData {
+  async parse(data: any[] | string[][], periodInMinutes: number = 30): Promise<EnergyData> {
     const csvRows = data as { [key: string]: string }[];
     const keys = Object.keys(csvRows[0]);
     const intervalColumns = keys.filter(k => /\d{2}:\d{2} - \d{2}:\d{2}/.test(k));
@@ -39,8 +39,9 @@ export class JemenaCsvParser implements EnergyCsvParser {
     const rawValues = Object.entries(aggregate).map(([date, value]) => ({ date, value }));
     const processedData = aggregateToInterval(rawValues, periodInMinutes);
     const filteredData = filterLastYearOfData(processedData);
-    const paddedData = padMissingDates(filteredData, periodInMinutes);
-    
+    const averageData = await fetchAndParseAverageData(periodInMinutes);
+    const paddedData = padMissingDates(filteredData, periodInMinutes, averageData);
+
     return {
       periodInMinutes,
       values: paddedData

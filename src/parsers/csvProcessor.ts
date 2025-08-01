@@ -6,9 +6,10 @@ import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
 import { parseISO } from 'date-fns';
 import { format } from 'date-fns-tz';
 
+
 export interface EnergyCsvParser {
   isValid: (data: any[] | string[][]) => boolean;
-  parse(data: any[] | string[][], periodInMinutes?: number): EnergyData;
+  parse(data: any[] | string[][], periodInMinutes?: number): Promise<EnergyData>;
 }
 
 const parsers = [
@@ -139,26 +140,105 @@ export function aggregateToInterval(
   }
 }
 
+// Helper: calculate ratio
+function calculateRatio(data: EnergyPeriodEntry[], avgLookup: Record<string, number>): number {
+  let sumData = 0;
+  let sumAvg = 0;
+  for (const entry of data) {
+    sumData += entry.value;
+    const key = entry.date.slice(5, 16); // MM-DDTHH:mm
+    if (avgLookup[key] !== undefined) {
+      sumAvg += avgLookup[key];
+    }
+  }
+  // Avoid division by zero
+  return sumAvg !== 0 ? sumData / sumAvg : 1;
+}
+
+/**
+ * Pads missing dates in the data array, imputing missing values using the provided avgMap and a calculated ratio.
+ * This function is synchronous; avgMap must be prepared in advance (e.g., using fetchAndParseAverageData).
+ * @param data Array of EnergyPeriodEntry (may have missing intervals)
+ * @param periodInMinutes Interval size in minutes
+ * @param avgMap Map of ISO date string to average value (from average-vic-nem12.csv)
+ * @returns Array of EnergyPeriodEntry with all intervals filled
+ */
 export function padMissingDates(
   data: EnergyPeriodEntry[],
-  periodInMinutes: number
+  periodInMinutes: number,
+  avgMap: Record<string, number>
 ): EnergyPeriodEntry[] {
   if (!data.length) return [];
   const startDate = new Date(data[0].date);
   const endDate = new Date(data[data.length - 1].date);
   const blockMillis = periodInMinutes * 60 * 1000;
+
+  // Fast check: if data already has all intervals, return data as-is
+  const expectedCount = Math.floor((endDate.getTime() - startDate.getTime()) / blockMillis) + 1;
+  if (data.length === expectedCount) {
+    return data;
+  }
+
   const filledData: EnergyPeriodEntry[] = [];
-  
+  // Build avgLookup: key is MM-DDTHH:mm, value is avg value (first found for that slot)
+  const avgLookup: Record<string, number> = {};
+  for (const [iso, val] of Object.entries(avgMap)) {
+    const key = iso.slice(5, 16); // MM-DDTHH:mm
+    if (avgLookup[key] === undefined) {
+      avgLookup[key] = val;
+    }
+  }
+
+  const ratio = calculateRatio(data, avgLookup);
+
   let currentDate = new Date(startDate);
   while (currentDate <= endDate) {
     const dateKey = format(currentDate, "yyyy-MM-dd'T'HH:mm", { timeZone: 'UTC' });
     const existingEntry = data.find(entry => entry.date === dateKey);
+    let value: number;
+    if (existingEntry) {
+      value = existingEntry.value;
+    } else {
+      // Impute using average data for this interval, scaled by ratio
+      const lookupKey = dateKey.slice(5, 16); // MM-DDTHH:mm
+      value = avgLookup[lookupKey] !== undefined ? avgLookup[lookupKey] * ratio : 0;
+    }
     filledData.push({
       date: dateKey,
-      value: existingEntry ? existingEntry.value : 0,
+      value,
     });
     currentDate.setTime(currentDate.getTime() + blockMillis);
   }
 
   return filledData;
+}
+
+// Browser-compatible helper to fetch and parse average-vic-nem12.csv
+export function fetchAndParseAverageData(periodInMinutes: number, csvUrl = '/average-vic-nem12.csv'): Promise<Record<string, number>> {
+  return fetch(csvUrl)
+    .then(response => response.text())
+    .then(content => {
+      const avgMap: Record<string, number> = {};
+      const lines = content.split(/\r?\n/).filter(Boolean);
+      for (const line of lines) {
+        const [interval, yyyymmdd, ...values] = line.split(',');
+        if (!interval || !yyyymmdd || values.length === 0) continue;
+        const year = yyyymmdd.slice(0, 4);
+        const month = yyyymmdd.slice(4, 6);
+        const day = yyyymmdd.slice(6, 8);
+        const dateBase = `${year}-${month}-${day}`;
+        const intervalsPerDay = 24 * 60 / periodInMinutes;
+        for (let i = 0; i < intervalsPerDay; i++) {
+          const minutes = i * periodInMinutes;
+          const hour = Math.floor(minutes / 60).toString().padStart(2, '0');
+          const min = (minutes % 60).toString().padStart(2, '0');
+          const iso = `${dateBase}T${hour}:${min}`;
+          const val = parseFloat(values[i]);
+          if (!isNaN(val)) {
+            avgMap[iso] = val;
+          }
+        }
+      }
+      return avgMap;
+    });
 }
