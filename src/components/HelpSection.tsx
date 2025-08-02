@@ -174,10 +174,9 @@ const HelpSection: React.FC = () => {
                 <li><strong>Solar generation</strong> is used first to fulfill your consumption needs for that interval.</li>
                 <li>If there is still unmet consumption, <strong>stored battery energy</strong> is used next (if a battery is present and has charge).</li>
                 <li>Any remaining consumption is supplied by the <strong>grid</strong>.</li>
+                <li>If there is excess solar generation after meeting your consumption for an interval, the surplus is used to <strong>charge the battery</strong> (if a battery is present and if not already full).</li>
+                <li>Any solar energy left after charging the battery is <strong>exported to the grid</strong>, up to your daily export limit. Any additional excess is not exported.</li>
               </ol>
-              <p>
-                If there is excess solar generation after meeting your consumption for an interval, the surplus is used to charge the battery (if not already full). Any solar energy left after charging the battery is exported to the grid, up to your daily export limit. Any additional excess is not exported.
-              </p>
             </div>
           )}
         </div>

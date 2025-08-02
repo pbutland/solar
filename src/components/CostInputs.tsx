@@ -184,7 +184,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
     <div className="cost-inputs-section">
       <h3>Cost Configuration</h3>
       <div className="cost-input-row">
-        <label htmlFor="solar-cost">Solar Cost ($/kW) <InfoTooltip text='Should include inverter cost'></InfoTooltip></label>
+        <label htmlFor="solar-cost">Solar Cost ($/kW) <InfoTooltip text='Should include inverter cost and any government rebates'></InfoTooltip></label>
         <input
           type="number"
           id="solar-cost"
@@ -197,7 +197,7 @@ function CostInputs({ installationSize, batteryCapacity, onCostChange }: CostInp
         />
       </div>
       <div className="cost-input-row">
-        <label htmlFor="battery-cost">Battery Cost ($/kWh)</label>
+        <label htmlFor="battery-cost">Battery Cost ($/kWh) <InfoTooltip text='Should include any government rebates'></InfoTooltip></label>
         <input
           type="number"
           id="battery-cost"
