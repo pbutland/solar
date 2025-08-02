@@ -3,7 +3,7 @@ import { NEM12CsvParser } from './NEM12CsvParser';
 import { JemenaCsvParser } from './JemenaCsvParser';
 import { PowerpalCsvParser } from './PowerpalCsvParser';
 import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
-import { parseISO } from 'date-fns';
+import { parseISO, subYears } from 'date-fns';
 import { format } from 'date-fns-tz';
 
 
@@ -48,7 +48,7 @@ export function filterLastYearOfData(data: EnergyPeriodEntry[]): EnergyPeriodEnt
   }, undefined);
   if (!maxDate) return [];
 
-  const cutoff = new Date(maxDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const cutoff = subYears(maxDate, 1);
   const filtered = data.filter(row => {
     if (!row.date) return false;
     const d = parseISO(row.date);
