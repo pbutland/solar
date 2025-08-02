@@ -241,7 +241,7 @@ const HelpSection: React.FC = () => {
               <p><strong>Solar data issues:</strong></p>
               <ul>
                 <li>Verify your latitude and longitude values are correct</li>
-                <li>Some remote locations may have limited solar data coverage</li>
+                <li>Some locations may have limited solar data coverage</li>
                 <li>If the NASA API is temporarily unavailable, try again later</li>
               </ul>
               
