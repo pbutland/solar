@@ -56,7 +56,7 @@ const HelpSection: React.FC = () => {
             className="help-header" 
             onClick={() => toggleSection('dataUpload')}
           >
-            <h3>Data Upload Format</h3>
+            <h3>Data Upload</h3>
             <span className="expand-icon">{expandedSections.dataUpload ? '−' : '+'}</span>
           </div>
           {expandedSections.dataUpload && (
@@ -165,6 +165,18 @@ const HelpSection: React.FC = () => {
               <p>
                 Where System Efficiency accounts for factors like panel conversion efficiency, 
                 inverter losses, shading, and orientation.
+              </p>
+              <h4>How Energy Flow is Calculated</h4>
+              <p>
+                For each interval of every day, your energy consumption is met in the following order:
+              </p>
+              <ol>
+                <li><strong>Solar generation</strong> is used first to fulfill your consumption needs for that interval.</li>
+                <li>If there is still unmet consumption, <strong>stored battery energy</strong> is used next (if a battery is present and has charge).</li>
+                <li>Any remaining consumption is supplied by the <strong>grid</strong>.</li>
+              </ol>
+              <p>
+                If there is excess solar generation after meeting your consumption for an interval, the surplus is used to charge the battery (if not already full). Any solar energy left after charging the battery is exported to the grid, up to your daily export limit. Any additional excess is not exported.
               </p>
             </div>
           )}
