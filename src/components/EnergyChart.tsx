@@ -232,8 +232,16 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
   const dailyConsumption = Array.isArray(dailyAggregated?.totalConsumption) ? dailyAggregated.totalConsumption : [];
   const hasDailyGeneration = dailyGeneration.length > 0;
   const hasDailyConsumption = dailyConsumption.length > 0;
+  const dailySolar = Array.isArray(dailyAggregated?.consumptionSolar) ? dailyAggregated.consumptionSolar : [];
+  const dailyBattery = Array.isArray(dailyAggregated?.consumptionBattery) ? dailyAggregated.consumptionBattery : [];
   const totalGeneration = hasDailyGeneration ? dailyGeneration.reduce((sum, e) => sum + (e.value || 0), 0) : 0;
   const totalConsumption = hasDailyConsumption ? dailyConsumption.reduce((sum, e) => sum + (e.value || 0), 0) : 0;
+  const totalSolarUsed = dailySolar.length > 0 ? dailySolar.reduce((sum, e) => sum + (e.value || 0), 0) : 0;
+  const totalBatteryUsed = dailyBattery.length > 0 ? dailyBattery.reduce((sum, e) => sum + (e.value || 0), 0) : 0;
+  const totalSolarAndBattery = totalSolarUsed + totalBatteryUsed;
+  const percentSolarAndBattery = (hasDailyConsumption && totalConsumption > 0)
+    ? (totalSolarAndBattery / totalConsumption) * 100
+    : 0;
   const netEnergy = hasDailyGeneration && hasDailyConsumption ? totalGeneration - totalConsumption : 0;
   // Surplus/deficit days: only if both exist
   let surplusDays = 0, deficitDays = 0;
@@ -288,6 +296,10 @@ const EnergyChart: React.FC<EnergyChartProps> = ({
               <div className="summary-item">
                 <span className="summary-label">Net Energy:</span>
                 <span className={`summary-value ${netEnergy >= 0 ? 'surplus' : 'deficit'}`}>{netEnergy >= 0 ? '+' : ''}{formatNumber(Math.round(netEnergy))} kWh</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">From Solar/Battery:</span>
+                <span className="summary-value">{percentSolarAndBattery.toFixed(1)}%</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Surplus Days:</span>

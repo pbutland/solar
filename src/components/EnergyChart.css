@@ -91,7 +91,7 @@
 .chart-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 10px;
   margin-bottom: 15px;
   padding: 15px;
   background: #f8f9fa;
@@ -105,7 +105,7 @@
 }
 
 .summary-label {
-  font-size: 0.85em;
+  font-size: 0.65em;
   color: #666;
   margin-bottom: 2px;
   font-weight: 500;
