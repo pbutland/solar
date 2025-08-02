@@ -3,7 +3,6 @@ import './App.css'
 import EnergyChart from './components/EnergyChart'
 import InstallationControls from './components/InstallationControls'
 import FileUpload from './components/FileUpload'
-// import LocationInput from './components/LocationInput'
 import LocationMapInput from './components/LocationMapInput'
 import HelpSection from './components/HelpSection'
 import CostInputs from './components/CostInputs'
@@ -14,6 +13,7 @@ import { calculateConsumptionData, calculateSolarGeneration } from './utils/sola
 
 
 function App() {
+  const [isLoadingUpload, setIsLoadingUpload] = useState<boolean>(false);
   const [installationSize, setInstallationSize] = useState(6)
   const [batteryCapacity, setBatteryCapacity] = useState(0)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -149,7 +149,6 @@ function App() {
   const handleDataLoaded = async (data: EnergyData) => {
     try {
       if (data) {
-        // If we have solar data, use it, otherwise empty array
         const generationSolar = energyCalculations && energyCalculations.generationSolar ? energyCalculations.generationSolar : [];
         const base: EnergyCalculations = {
           periodInMinutes: data.periodInMinutes,
@@ -167,24 +166,27 @@ function App() {
         };
         setEnergyCalculations(calculateConsumptionData(base, systemDetails));
       }
-      setUploadError(null)
-      setUploadSuccess(true)
+      setUploadError(null);
+      setUploadSuccess(true);
       // Clear success message after 3 seconds
-      setTimeout(() => setUploadSuccess(false), 3000)
+      setTimeout(() => setUploadSuccess(false), 3000);
     } catch (error) {
       if (error instanceof Error) {
-        setUploadError(`Error processing data: ${error.message}`)
+        setUploadError(`Error processing data: ${error.message}`);
       } else {
-        setUploadError('An unknown error occurred while processing the data.')
+        setUploadError('An unknown error occurred while processing the data.');
       }
-      setUploadSuccess(false)
+      setUploadSuccess(false);
+    } finally {
+      setIsLoadingUpload(false);
     }
-  }
+  };
 
   const handleUploadError = (error: string) => {
-    setUploadError(error)
-    setUploadSuccess(false)
-  }
+    setIsLoadingUpload(false);
+    setUploadError(error);
+    setUploadSuccess(false);
+  };
 
   const handleCostChange = (
     solarCost: number | null,
@@ -233,6 +235,7 @@ function App() {
         <FileUpload 
           onDataLoaded={handleDataLoaded}
           onError={handleUploadError}
+          onUploadStart={() => setIsLoadingUpload(true)}
         />
       </div>
       {uploadSuccess && (
@@ -248,6 +251,11 @@ function App() {
       {isLoadingSolar && (
         <div className="loading-message">
           🌞 Fetching solar data for your location...
+        </div>
+      )}
+      {isLoadingUpload && (
+        <div className="loading-message">
+          ⏳ Processing your energy data...
         </div>
       )}
       {solarError && (

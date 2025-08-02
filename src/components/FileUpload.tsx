@@ -9,11 +9,13 @@ import './FileUpload.css';
 interface FileUploadProps {
   onDataLoaded: (data: EnergyData) => void;
   onError: (error: string) => void;
+  onUploadStart?: () => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError, onUploadStart }) => {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
+      onUploadStart?.();
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
         if (file.type !== 'text/csv') {
@@ -70,6 +72,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError }) => {
 
   // Handler for loading average VIC data
   const handleLoadAverageData = useCallback(async () => {
+    onUploadStart?.();
     try {
       const response = await fetch(`${import.meta.env.BASE_URL}average-vic-nem12.csv`);
       if (!response.ok) {

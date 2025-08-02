@@ -105,7 +105,7 @@ function FinancialSummary({ energyCalculations, solarInstallationCost, batteryIn
           <span className="value">{formatROI(roiYears, roiPercent)}</span>
         </div>
         <div className="summary-item">
-          <label>NPV (24 years) <InfoTooltip text='Net Present Value (over 24 years for solar, 12.5 years for battery (includes replacement costs), discount rate 5%)'></InfoTooltip></label>
+          <label>NPV (24 years) <InfoTooltip text='Net Present Value (over 24 years for solar, 12 years for battery (includes replacement costs), discount rate 5%)'></InfoTooltip></label>
           <span className="value">{npv === undefined ? '--' : formatCurrency(npv)}</span>
         </div>
       </div>
