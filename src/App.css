@@ -1,3 +1,32 @@
+/* GitHub link styles for dark background */
+.github-link-container {
+  margin-top: 0.5em;
+  text-align: center;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.95em;
+  transition: color 0.2s;
+}
+
+.github-link:hover, .github-link:focus {
+  color: #58a6ff;
+  text-decoration: underline;
+}
+
+.github-icon {
+  vertical-align: middle;
+  fill: currentColor;
+}
+
+.github-link-text {
+  vertical-align: middle;
+}
 .app {
   max-width: 1200px;
   margin: 0 auto;
