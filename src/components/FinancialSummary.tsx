@@ -25,6 +25,9 @@ function FinancialSummary({ energyCalculations, solarInstallationCost, batteryIn
 
   // Calculate savings only if both totalConsumption and generationSolar exist
   let savings: number | undefined = undefined;
+  let totalNonSolar: number | undefined = undefined;
+  let totalConsumption: number | undefined = undefined;
+  let showCostsInsteadOfSavings = false;
   if (
     energyCalculations?.totalConsumption &&
     energyCalculations?.generationSolar &&
@@ -33,9 +36,12 @@ function FinancialSummary({ energyCalculations, solarInstallationCost, batteryIn
     energyCalculations.originalConsumptionCost.length > 0 &&
     energyCalculations.consumptionCost.length > 0
   ) {
-    const totalNonSolar = energyCalculations.originalConsumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
-    const totalConsumption = energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+    totalNonSolar = energyCalculations.originalConsumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+    totalConsumption = energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
     savings = totalNonSolar - totalConsumption;
+    if (totalNonSolar === totalConsumption) {
+      showCostsInsteadOfSavings = true;
+    }
   } else if (energyCalculations?.consumptionCost && energyCalculations.consumptionCost.length > 0) {
     savings = -energyCalculations.consumptionCost.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
   }
@@ -97,8 +103,17 @@ function FinancialSummary({ energyCalculations, solarInstallationCost, batteryIn
           <span className="value">{formatCurrency(installationCost)}</span>
         </div>
         <div className="summary-item">
-          <label>{earnings ? 'Earnings' : 'Savings'} (per year) <InfoTooltip text='Excludes installation costs'></InfoTooltip></label>
-          <span className="value">{savings === undefined ? '--' : formatCurrency(savings)}</span>
+          {showCostsInsteadOfSavings ? (
+            <>
+              <label>Costs (per year) <InfoTooltip text='Excludes daily supply charge'></InfoTooltip></label>
+              <span className="value">{totalConsumption === undefined ? '--' : formatCurrency(totalConsumption)}</span>
+            </>
+          ) : (
+            <>
+              <label>{earnings ? 'Earnings' : 'Savings'} (per year) <InfoTooltip text='Excludes installation costs'></InfoTooltip></label>
+              <span className="value">{savings === undefined ? '--' : formatCurrency(savings)}</span>
+            </>
+          )}
         </div>
         <div className="summary-item">
           <label>ROI</label>
