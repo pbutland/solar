@@ -215,6 +215,13 @@ const HelpSection: React.FC = () => {
               <p>
                 The <strong>Financial Summary</strong> estimates your annual electricity costs and potential savings based on your system configuration and rates. Adjust the installation size, battery capacity, and cost inputs to see how your choices affect your bottom line.
               </p>
+              <h5>Understanding the Financial Summary Values</h5>
+              <ul>
+                <li><strong>Installation Cost:</strong> The total upfront cost of your solar and battery system. This is calculated by multiplying your entered cost per kW (for solar) and per kWh (for battery) by the size of your system, then adding them together.</li>
+                <li><strong>Savings (per year):</strong> The estimated annual reduction in your electricity bill compared to not having solar/battery. If there are no savings, this field may show your annual costs instead. (Excludes installation costs and daily supply charge and may be affected by export limits.)</li>
+                <li><strong>ROI:</strong> The payback period in years (and percent return) for your investment, calculated as installation cost divided by annual savings. Shows how long it will take for your savings to cover the upfront cost.</li>
+                <li><strong>NPV (24 years):</strong> Net Present Value of your investment over 24 years (solar lifespan), including battery replacement at year 12 if applicable, and using a 5% discount rate. A positive NPV means your investment is projected to be profitable over its lifetime.</li>
+              </ul>
             </div>
           )}
         </div>
