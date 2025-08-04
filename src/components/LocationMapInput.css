@@ -5,10 +5,21 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.latlong-section h3 {
-  margin-top: 0;
+.latlong-section-header {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.latlong-section-header h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
   font-size: 1.25rem;
-  color: #333;
+}
+
+.latlong-section-header p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
 }
 
 .location-input-row {

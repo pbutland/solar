@@ -90,7 +90,14 @@ function LocationInputMapToggle({ onLocationChange }: { onLocationChange?: (lati
 
   return (
     <div className="latlong-section" style={{ position: 'relative' }}>
-      <h3 style={{ marginRight: '2.5em' }}>Location Coordinates</h3>
+      <div className="latlong-section-header">
+        <h3>Location Coordinates</h3>
+        {mode === 'fields' ? (
+          <p>Enter your location below</p>
+        ) : (
+          <p>Click on the map to specify your location</p>
+        )}
+      </div>
       <button
         className="location-toggle-btn"
         onClick={() => setMode(mode === 'fields' ? 'map' : 'fields')}
