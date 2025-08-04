@@ -122,13 +122,18 @@ function processSolarIrradianceData(
 
     // Create zero value entries for the time after sunset until midnight
     const postSunsetEntries: EnergyPeriodEntry[] = [];
-    for (let i = roundedSunset; i < (1440-roundedSunset); i += periodInMinutes) {
+    for (let i = roundedSunset; i < (midnightUtcMinutes + 1440); i += periodInMinutes) {
       const entryDate = new Date(entry.date);
       entryDate.setUTCMinutes(i);
       postSunsetEntries.push({
         date: entryDate.toISOString(),
         value: 0 // No energy after sunset
       });
+    }
+
+    const totalEntries = preSunriseEntries.length + values.length + postSunsetEntries.length;
+    if (totalEntries !== 48) {
+      console.warn(`Unexpected number of entries: ${totalEntries}`);
     }
 
     // Combine all entries: pre-sunrise, split values, and post-sunset
