@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import type { FileRejection } from 'react-dropzone';
 import Papa from 'papaparse';
 import { getEnergyCsvParser } from '../parsers/csvProcessor';
 import type { EnergyData } from '../types/index';
@@ -126,8 +127,20 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onError, onUpload
     }
   }, [onDataLoaded, onError]);
 
+  const onDropRejected = useCallback((fileRejections: FileRejection[]) => {
+    if (fileRejections && fileRejections.length > 0) {
+      const reason = fileRejections[0].errors.find((e: { code: string }) => e.code === 'file-too-large');
+      if (reason) {
+        onError('File is too large. Maximum allowed size is 15MB.');
+        return;
+      }
+      onError('File was rejected. Please ensure it is a CSV file and under 15MB.');
+    }
+  }, [onError]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     accept: { 'text/csv': ['.csv'] },
     maxSize: 15 * 1024 * 1024, // 15MB
   });
