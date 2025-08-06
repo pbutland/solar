@@ -99,6 +99,7 @@ export function aggregateToInterval(
     let blockStart = getMs(sorted[0].date) - (getMs(sorted[0].date) % targetIntervalMs);
     let blockSum = 0;
     let blockCount = 0;
+    let lastEntryUsageType;
     for (const entry of sorted) {
       const entryMs = getMs(entry.date);
       const entryBlockStart = entryMs - (entryMs % targetIntervalMs);
@@ -106,12 +107,14 @@ export function aggregateToInterval(
         result.push({
           date: new Date(blockStart).toISOString().slice(0, 16),
           value: blockSum,
+          usageType: entry.usageType
         });
         blockStart = entryBlockStart;
         blockSum = 0;
         blockCount = 0;
       }
       blockSum += entry.value;
+      lastEntryUsageType = entry.usageType;
       blockCount++;
     }
     // Push last block
@@ -119,6 +122,7 @@ export function aggregateToInterval(
       result.push({
         date: new Date(blockStart).toISOString().slice(0, 16),
         value: blockSum,
+        usageType: lastEntryUsageType
       });
     }
     return result;
@@ -133,7 +137,7 @@ export function aggregateToInterval(
       const valuePerBlock = entry.value / nBlocks;
       for (let b = 0; b < nBlocks; b++) {
         const blockDate = new Date(entryMs + b * targetIntervalMs).toISOString().slice(0, 16);
-        result.push({ date: blockDate, value: valuePerBlock });
+        result.push({ date: blockDate, value: valuePerBlock, usageType: entry.usageType });
       }
     }
     return result;
@@ -206,6 +210,7 @@ export function padMissingDates(
     filledData.push({
       date: dateKey,
       value,
+      usageType: existingEntry?.usageType
     });
     currentDate.setTime(currentDate.getTime() + blockMillis);
   }

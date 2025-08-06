@@ -68,7 +68,7 @@ export async function getSolarIrradiance(
     const day = entry.date.substring(6, 8);
     // Set year to current year
     const dateStr = `${currentYear}-${month}-${day}`;
-    return { date: dateStr, value: entry.value };
+    return { date: dateStr, value: entry.value, usageType: 'generation' } as EnergyPeriodEntry;
   });
 
   // Sort by date

@@ -1,5 +1,5 @@
 import type { EnergyCsvParser } from './csvProcessor';
-import type { EnergyData } from '../types/index.js';
+import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
 import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 // NEM12 parser implementation
@@ -19,7 +19,7 @@ export class NEM12CsvParser implements EnergyCsvParser {
     // NEM12 structure: 100 (file header), 200 (meter), 300 (intervals), 900 (footer)
     let currentDate = '';
     let currentIntervalLength = periodInMinutes;
-    const rawValues: { date: string; value: number }[] = [];
+    const rawValues: EnergyPeriodEntry[] = [];
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -43,7 +43,7 @@ export class NEM12CsvParser implements EnergyCsvParser {
             const hour = Math.floor(minutes / 60).toString().padStart(2, '0');
             const minute = (minutes % 60).toString().padStart(2, '0');
             const iso = `${year}-${month}-${day}T${hour}:${minute}`;
-            rawValues.push({ date: iso, value: val });
+            rawValues.push({ date: iso, value: val, usageType: 'general' });
           }
         }
       }

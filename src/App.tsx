@@ -7,7 +7,7 @@ import LocationMapInput from './components/LocationMapInput'
 import HelpSection from './components/HelpSection'
 import CostInputs from './components/CostInputs'
 import FinancialSummary from './components/FinancialSummary'
-import type { EnergyData, EnergyCalculations, EnergySystemDetails } from './types/index'
+import type { EnergyData, EnergyCalculations, EnergySystemDetails, EnergyPeriodEntry } from './types/index'
 import { getSolarIrradiance, SolarIrradianceSource } from './services/solarIrradianceService'
 import { calculateConsumptionData, calculateSolarGeneration } from './utils/solarCalculations'
 
@@ -40,8 +40,9 @@ function App() {
     if (rawSolarIrradiance) {
       const generationSolar = rawSolarIrradiance.values.map(entry => ({
         date: entry.date,
-        value: calculateSolarGeneration(installationSize, entry.value)
-      }));
+        value: calculateSolarGeneration(installationSize, entry.value),
+        type: entry.usageType
+      } as EnergyPeriodEntry));
       // If we have consumption data, use it, otherwise empty array
       const totalConsumption = energyCalculations && energyCalculations.totalConsumption ? energyCalculations.totalConsumption : [];
       const base: EnergyCalculations = {

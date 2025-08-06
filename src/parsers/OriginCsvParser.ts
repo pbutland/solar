@@ -1,5 +1,5 @@
 import type { EnergyCsvParser } from './csvProcessor';
-import type { EnergyData } from '../types/index.js';
+import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
 import { parseISO } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
 import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
@@ -15,7 +15,7 @@ export class OriginCsvParser implements EnergyCsvParser {
 
   async parse(data: any[] | string[][], periodInMinutes: number = 30): Promise<EnergyData> {
     const csvRows = data as { [key: string]: string }[];
-    const blockConsumption: { [key: string]: number } = {};
+    const entries: EnergyPeriodEntry[] = [];
 
     for (const row of csvRows) {
       const usageType = row['Usage Type'];
@@ -77,26 +77,21 @@ export class OriginCsvParser implements EnergyCsvParser {
             blockStartDate = new Date(blockStartMillis);
           }
           const dateKey = format(blockStartDate, "yyyy-MM-dd'T'HH:mm", { timeZone: tz || 'UTC' });
-          if (blockConsumption[dateKey]) {
-            blockConsumption[dateKey] += consumptionPerBlock;
-          } else {
-            blockConsumption[dateKey] = consumptionPerBlock;
-          }
+          entries.push({ date: dateKey, value: consumptionPerBlock, usageType: 'general' });
         }
       } catch (error) {
         console.error('Error parsing date:', fromTime, toTime, error);
       }
     }
 
-    const rawValues = Object.entries(blockConsumption)
-      .map(([date, value]) => ({ date, value }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort entries by date (optional, for consistency)
+    entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    const processedData = aggregateToInterval(rawValues, periodInMinutes);
+    const processedData = aggregateToInterval(entries, periodInMinutes);
     const filteredData = filterLastYearOfData(processedData);
     const averageData = await fetchAndParseAverageData(periodInMinutes);
     const paddedData = padMissingDates(filteredData, periodInMinutes, averageData);
-      
+    
     return {
       periodInMinutes,
       values: paddedData

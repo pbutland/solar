@@ -10,6 +10,8 @@ export interface EnergyPeriodEntry {
   date: string;
   /** Energy consumption/generation in kWh */
   value: number;
+  /** Type of entry: 'general', 'controlled', or 'generation' */
+  usageType?: 'general' | 'controlled' | 'generation';
 }
 
 export interface EnergyData {
@@ -26,6 +28,7 @@ export interface EnergyCalculations {
   consumptionSolar?: EnergyPeriodEntry[];
   consumptionBattery?: EnergyPeriodEntry[];
   totalConsumption?: EnergyPeriodEntry[];
+  controlledConsumption?: EnergyPeriodEntry[];
   consumptionCost?: number[];
   originalConsumptionCost?: number[];
 }

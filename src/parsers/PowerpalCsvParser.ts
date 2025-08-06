@@ -1,5 +1,5 @@
 import type { EnergyCsvParser } from './csvProcessor';
-import type { EnergyData } from '../types/index.js';
+import type { EnergyData, EnergyPeriodEntry } from '../types/index.js';
 import { aggregateToInterval, fetchAndParseAverageData, filterLastYearOfData, padMissingDates } from './csvProcessor';
 
 /**
@@ -20,28 +20,23 @@ export class PowerpalCsvParser implements EnergyCsvParser {
   async parse(data: any[] | string[][], periodInMinutes: number = 30): Promise<EnergyData> {
     const csvRows = data as { [key: string]: string }[];
 
-    // Aggregate by block of periodInMinutes
-    const blockMillis = periodInMinutes * 60 * 1000;
-    const blockSums: { [blockStart: string]: number } = {};
-
+    // Build flat array of entries
+    const entries: EnergyPeriodEntry[] = [];
     for (const row of csvRows) {
       const dateStr = row['datetime_utc'];
       const wh = parseFloat(row['watt_hours']);
       if (!dateStr || isNaN(wh)) continue;
       const date = new Date(dateStr.replace(' ', 'T'));
       if (isNaN(date.getTime())) continue;
-      const millis = date.getTime();
-      const blockStartMillis = millis - (millis % blockMillis);
-      const blockDate = new Date(blockStartMillis).toISOString().slice(0, 16); // 'YYYY-MM-DDTHH:mm'
-      if (!blockSums[blockDate]) blockSums[blockDate] = 0;
-      blockSums[blockDate] += wh;
+      // Use ISO string to minute precision for interval aggregation
+      const dateTime = date.toISOString().slice(0, 16);
+      entries.push({ date: dateTime, value: wh / 1000, usageType: 'general' });
     }
 
-    const rawValues = Object.entries(blockSums)
-      .map(([date, whSum]) => ({ date, value: whSum / 1000 })) // kWh
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort entries by date (optional, for consistency)
+    entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    const processedData = aggregateToInterval(rawValues, periodInMinutes);
+    const processedData = aggregateToInterval(entries, periodInMinutes);
     const filteredData = filterLastYearOfData(processedData);
     const averageData = await fetchAndParseAverageData(periodInMinutes);
     const paddedData = padMissingDates(filteredData, periodInMinutes, averageData);
